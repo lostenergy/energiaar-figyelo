@@ -160,7 +160,8 @@ def mutat(fig: go.Figure) -> None:
 TAROLT = {"napi": "data/villamos_napi.csv", "negyedora": "data/villamos_15perc.csv",
           "gaz": "data/gaz_masnapi.csv", "gaz_wd": "data/gaz_napon_belul.csv",
           "hataridos": "hataridos.csv"}
-NEGYEDORA_MEGORZES = 150  # ennyi napnyi negyedórás árat őrzünk meg részletesen
+NEGYEDORA_MEGORZES = 70  # ennyi napnyi negyedórás árat őrzünk meg részletesen
+MERET_HATAR = 900_000     # a GitHub felülete egy megabájt fölött már nem kezeli jól a fájlokat
 
 
 @st.cache_resource(show_spinner=False)
@@ -264,7 +265,7 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
         else adat["villamos"]
     tetelek = [("napi", adat["napi"]), ("negyedora", negyedora),
                ("gaz", adat["gaz"]), ("gaz_wd", adat["gaz_wd"])]
-    mentve = []
+    mentve, gondok = [], []
     for kulcs, tabla in tetelek:
         if tabla is None or tabla.empty:
             continue
@@ -272,9 +273,17 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
         korabbi = utoljara.get(kulcs, mentett.get(kulcs))
         if not T.valtozott(korabbi, szoveg):
             continue
-        t.ir(TAROLT[kulcs], szoveg, f"Adatfrissítés {ma_szoveg}")
-        utoljara[kulcs] = szoveg
-        mentve.append(TAROLT[kulcs])
+        if len(szoveg.encode("utf-8")) > MERET_HATAR:
+            gondok.append(f"{TAROLT[kulcs]}: túl nagy a mentéshez")
+            continue
+        try:
+            t.ir(TAROLT[kulcs], szoveg, f"Adatfrissítés {ma_szoveg}")
+            utoljara[kulcs] = szoveg
+            mentve.append(TAROLT[kulcs])
+        except T.TarolasHiba as e:
+            # Egy fájl hibája ne akadályozza meg a többi mentését.
+            gondok.append(f"{TAROLT[kulcs]}: {e}")
+    st.session_state["mentesi_gondok"] = gondok
     return mentve
 
 
@@ -308,6 +317,7 @@ mentve = []
 if tarolo().mukodik and not villamos.empty:
     try:
         mentve = ment_tarolóba(adat, mentett)
+        hibak += [f"Mentés: {g}" for g in st.session_state.get("mentesi_gondok", [])]
     except T.TarolasHiba as e:
         hibak.append(f"Mentés: {e}")
 
@@ -315,7 +325,7 @@ allapot = f"Lekérve {most.strftime('%H:%M')}-kor"
 if not napi.empty:
     allapot += f" · {len(napi)} napnyi előzmény"
 if mentve:
-    allapot += " · mentve a tárolóba"
+    allapot += f" · {len(mentve)} fájl mentve"
 elif not tarolo().mukodik:
     allapot += " · tároló nincs beállítva"
 allapot_hely.markdown(f'<p class="ear-frissites">{allapot}, budapesti idő szerint</p>', unsafe_allow_html=True)
