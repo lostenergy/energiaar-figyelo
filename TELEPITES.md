@@ -45,6 +45,37 @@ streamlit run app.py
 
 A böngésző magától megnyílik. Ilyenkor nincs link, amit meg lehetne osztani, és minden indításnál futnia kell a parancsnak.
 
+## Adatok megőrzése (ajánlott, egyszeri beállítás)
+
+A Streamlit gépe időnként újraindul, és olyankor törli, amit oda mentettünk. Tartós tároláshoz az alkalmazásnak vissza kell írnia az adatokat a GitHub-tárolóba. Ehhez egy hozzáférési kulcs kell.
+
+**1. Kulcs kiállítása a GitHubon**
+1. Nyisd meg: `github.com/settings/personal-access-tokens`
+2. **Generate new token** (Fine-grained token).
+3. Név: `energiaar-figyelo`. Lejárat: válassz hosszabbat, például egy évet; a lejárat után újat kell kiállítani.
+4. *Repository access*: **Only select repositories**, és válaszd ki az `energiaar-figyelo` tárolót.
+5. *Permissions* alatt a **Repository permissions > Contents** sort állítsd **Read and write** értékre.
+6. **Generate token**, majd másold ki a megjelenő kulcsot. Csak egyszer látod.
+
+**2. Kulcs megadása a Streamlitnek**
+1. A Streamlit oldalán nyisd meg az alkalmazást, jobb alul **Manage app**, majd a három pont menüben **Settings > Secrets**.
+2. Illeszd be ezt, a kulcsot és a tároló nevét kicserélve:
+
+```toml
+[github]
+token = "ide_jon_a_kimasolt_kulcs"
+repo = "lostenergy/energiaar-figyelo"
+branch = "main"
+```
+
+3. **Save**. Az alkalmazás újraindul.
+
+Innentől a fejlécben megjelenik, hogy mentve a tárolóba, és a `data` mappában gyűlnek az adatok. A kulcs a Secrets-ben marad, a tárolóba soha nem kerül bele.
+
+**Mit tárol.** A napi villamos összesítést korlátlan ideig, a részletes negyedórás árakat az utolsó 150 napra, a gázárakat teljes egészében, valamint a beírt határidős jegyzéseket. Így az időszaki átlagok évekre visszamenőleg pontosak lesznek, az alkalmazás pedig gyorsabban indul, mert nem kell mindig egy évet újra letöltenie.
+
+Kulcs nélkül minden ugyanúgy működik, csak minden megnyitáskor újra letölti az adatokat, és nem őriz meg semmit.
+
 ## Határidős árak megadása
 
 A hosszabb szállítási időszakok (hét, hónap, negyedév, félév, szezon, gázév, naptári év) árait a tőzsdék nem adják ki ingyen, gépi lekérésre alkalmas formában. A HUDEX 2025 októberében megszűnt, az EEX pedig előfizetéshez köti az adatait. A legegyszerűbb, ha a saját energiakereskedődtől kérsz napi árlistát; ügyfeleknek ezt általában díjmentesen küldik.
@@ -61,6 +92,8 @@ A **Határidős árak** fülön az alkalmazás felkínálja a piacon szokásos t
 ## Napi használat
 
 Nyisd meg az alkalmazást, és nézd meg a számokat. Ha közben új ár jelent meg, nyomd meg a **Frissítés** gombot.
+
+Öt fül van: **Villamos energia** (mai és holnapi nap egy folyamatos, 48 órás görbén, számkártyákkal és időszaki átlagokkal), **Földgáz**, **Határidős árak**, **Piaci kép** (számokban összefoglalt helyzetkép és ingyenes elemzési források), valamint **Előzmények** és letöltés.
 
 - A holnapi villamos ár általában **13 óra körül** jelenik meg. Előtte a mai nap görbéje látszik.
 - A CEEGEX másnapi gázára a kereskedési nap folyamán alakul ki, a **CEEREP** index 17:30 után kerül ki.
