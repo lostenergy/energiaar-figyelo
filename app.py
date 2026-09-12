@@ -37,7 +37,7 @@ html, body, .stApp, .stMarkdown, p, h1, h2, h3, li, label, button, td, th, input
 [data-baseweb="tab"], [data-testid="stCaptionContainer"] {{
   font-family: 'Archivo', system-ui, sans-serif;
 }}
-.block-container {{ max-width: 1180px; padding-top: 1.4rem; padding-bottom: 3rem; }}
+.block-container {{ max-width: 1180px; padding-top: 3.2rem; padding-bottom: 3rem; }}
 h2, h3 {{ color: {SZ['tinta']}; font-weight: 600; letter-spacing: -0.01em; }}
 h3 {{ font-size: 1.02rem !important; margin: 1.2rem 0 0.2rem 0 !important; padding: 0 !important; }}
 .ear-cim {{ font-size: 1rem; font-weight: 600; color: {SZ['tinta']}; margin: 0; }}
@@ -289,12 +289,11 @@ def mindent_ujra() -> None:
 most = pd.Timestamp.now(tz=B.IDOZONA)
 ma, holnap = most.date(), most.date() + timedelta(days=1)
 
-fej_bal, fej_jobb = st.columns([5, 1], vertical_alignment="center")
-with fej_bal:
-    st.markdown('<p class="ear-cim">Magyar energiaárak</p>', unsafe_allow_html=True)
-    allapot_hely = st.empty()
-with fej_jobb:
-    if st.button("Frissítés", width="stretch"):
+st.markdown('<p class="ear-cim">Magyar energiaárak</p>', unsafe_allow_html=True)
+allapot_hely = st.empty()
+gomb_hely, _ = st.columns([1, 4], vertical_alignment="center")
+with gomb_hely:
+    if st.button("Frissítés", width="stretch", help="Újra lekéri az árakat a forrásokból"):
         mindent_ujra()
         st.rerun()
 
