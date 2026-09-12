@@ -195,7 +195,7 @@ def villamos_elozmeny(vegnap: date, napok: int) -> pd.DataFrame:
 
 @st.cache_data(ttl=B.FRISS_ELTARTHATOSAG, show_spinner=False)
 def villamos_friss(ma: date) -> pd.DataFrame:
-    return F.leker_villamos(ma - timedelta(days=B.FRISS_NAP), ma + timedelta(days=1))
+    return F.leker_villamos(ma - timedelta(days=B.FRISS_NAP), ma + timedelta(days=2))
 
 
 @st.cache_data(ttl=B.FRISS_ELTARTHATOSAG, show_spinner=False)
@@ -352,8 +352,8 @@ with lap_villamos:
 
         kartyak([
             ("Ma, zsinór", hu(zs_ma), f"csúcs {hu(napi_ertek(ma, 'csucs'), ha_nincs='')}"),
-            ("Holnap, zsinór", hu(zs_holnap, ha_nincs="13 óra után"),
-             valtozas_jel(S.valtozas(zs_holnap, zs_ma)) or "mához képest"),
+            ("Holnap, zsinór", hu(zs_holnap, ha_nincs="még nincs"),
+             f"ma {valtozas_jel(S.valtozas(zs_holnap, zs_ma))}" if zs_holnap else "13 óra után"),
             ("Holnap, csúcs", hu(napi_ertek(holnap, "csucs"), ha_nincs="-"),
              f"csúcson kívül {hu(napi_ertek(holnap, 'csucson_kivul'), ha_nincs='-')}"),
             ("7 napos átlag", hu(het), f"ma {valtozas_jel(S.valtozas(zs_ma, het))}" if het else ""),
@@ -364,8 +364,9 @@ with lap_villamos:
              str(napi_ertek(holnap, "max_ido") or "")),
         ])
 
-        # Folyamatos, 48 órás görbe: ma és holnap egy idővonalon
+        # Folyamatos, 48 órás görbe: ma és holnap egy idővonalon, dátumokkal
         ket_nap = villamos[villamos["nap"].isin([ma.isoformat(), holnap.isoformat()])].copy()
+        holnapi_negyedorak = int((ket_nap["nap"] == holnap.isoformat()).sum())
         if not ket_nap.empty:
             ket_nap["idopont"] = pd.to_datetime(ket_nap["ido"])
             fig = go.Figure()
@@ -379,22 +380,40 @@ with lap_villamos:
                     continue
                 fig.add_scatter(x=resz["idopont"], y=resz["ar"], name=f"{nev}, {hu_rovid(nap)}",
                                 mode="lines", line=dict(color=szin, width=2.2, shape="hv"),
-                                hovertemplate="%{y:.2f} EUR/MWh<extra></extra>")
+                                hovertemplate="%{x|%m. %d.} %{x|%H:%M} · %{y:.2f} EUR/MWh<extra></extra>")
+                # Nap felirata a sáv tetején
+                fig.add_annotation(x=pd.Timestamp(f"{nap.isoformat()} 12:00"), y=1.0, yref="paper",
+                                   text=f"<b>{hu_datum(nap)}</b>", showarrow=False, yanchor="bottom",
+                                   font=dict(size=12, color=szin))
             if honap is not None:
                 fig.add_hline(y=float(honap), line=dict(color=SZ["acel"], width=1, dash="dot"),
-                              annotation_text="30 napos átlag", annotation_position="top left",
+                              annotation_text="30 napos átlag", annotation_position="bottom left",
                               annotation_font=dict(color=SZ["acel"], size=11))
-            if van_holnap:
+            if holnapi_negyedorak:
                 fig.add_vline(x=pd.Timestamp(f"{holnap.isoformat()} 00:00"),
                               line=dict(color=SZ["vonal"], width=1))
-            abra_alap(fig, 330)
-            fig.update_xaxes(tickformat="%H:%M", dtick=3 * 3600 * 1000)
+            abra_alap(fig, 350)
+            fig.update_layout(margin=dict(l=0, r=6, t=26, b=0))
+            fig.update_xaxes(
+                tickformat="%H:%M", dtick=3 * 3600 * 1000,
+                range=[pd.Timestamp(f"{ma.isoformat()} 00:00"),
+                       pd.Timestamp(f"{(holnap + timedelta(days=1)).isoformat()} 00:00")
+                       if holnapi_negyedorak else pd.Timestamp(f"{holnap.isoformat()} 00:00")])
             fig.update_yaxes(title=dict(text="EUR/MWh", font=dict(size=11, color=SZ["acel"])))
             mutat(fig)
-            if not van_holnap:
-                st.markdown('<p class="ear-megj">A holnapi ár általában 13 óra körül jelenik meg. '
-                            'Addig csak a mai nap látszik; a Frissítés gomb újra lekéri.</p>',
+
+        if not van_holnap:
+            utolso = villamos["ido"].max() if not villamos.empty else ""
+            if holnapi_negyedorak:
+                st.markdown(f'<p class="ear-megj">A holnapi napra eddig {holnapi_negyedorak} negyedóra '
+                            'ára érkezett meg, ezért a napi átlagok még nem készülnek el. A teljes nap '
+                            'általában 13 óra után válik elérhetővé; a Frissítés gomb újra lekéri.</p>',
                             unsafe_allow_html=True)
+            else:
+                st.markdown('<p class="ear-megj">A holnapi ár még nem érhető el a forrásnál. A magyar '
+                            'másnapi piac eredménye 13 óra körül születik meg, de az Energy-Charts '
+                            'néha csak késő délután veszi át. A legfrissebb ár, amit most kaptunk: '
+                            f'{utolso}. Nyomd meg a Frissítés gombot később.</p>', unsafe_allow_html=True)
 
         bal, jobb = st.columns(2)
         with bal:
