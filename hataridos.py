@@ -121,12 +121,12 @@ def alap_termekek(ma: date) -> pd.DataFrame:
     hozzaad("Villamos", ["Zsinór", "Csúcs"], havi_termekek(ma, 3))
     hozzaad("Villamos", ["Zsinór", "Csúcs"], negyedeves_termekek(ma, 4))
     hozzaad("Villamos", ["Zsinór"], feleves_termekek(ma, 2))
-    hozzaad("Villamos", ["Zsinór", "Csúcs"], eves_termekek(ma, 2))
+    hozzaad("Villamos", ["Zsinór", "Csúcs"], eves_termekek(ma, 4))
     hozzaad("Gáz", ["Alap"], havi_termekek(ma, 3))
     hozzaad("Gáz", ["Alap"], negyedeves_termekek(ma, 4))
     hozzaad("Gáz", ["Alap"], gaz_szezonok(ma, 2))
     hozzaad("Gáz", ["Alap"], gazev(ma))
-    hozzaad("Gáz", ["Alap"], eves_termekek(ma, 2))
+    hozzaad("Gáz", ["Alap"], eves_termekek(ma, 3))
     return pd.DataFrame(sorok, columns=OSZLOPOK)
 
 

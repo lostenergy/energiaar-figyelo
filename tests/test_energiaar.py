@@ -197,7 +197,8 @@ def test_alap_termekek_szeptemberben():
     assert set(villamos["tipus"]) == {"Zsinór", "Csúcs"} and set(gaz["tipus"]) == {"Alap"}
     nevek = list(villamos[villamos["tipus"] == "Zsinór"]["termek"])
     assert nevek[:3] == ["2026. 38. hét", "2026. 39. hét", "2026. október"]
-    assert "2027. I. negyedév" in nevek and "2027. I. félév" in nevek and "2028. év" in nevek
+    assert "2027. I. negyedév" in nevek and "2027. I. félév" in nevek
+    assert [n for n in nevek if n.endswith(". év")] == ["2027. év", "2028. év", "2029. év", "2030. év"]
     assert t["ar"].isna().all()
     # minden szállítási időszak a jegyzés napja után kezdődik, és a vége a kezdet után van
     assert (t["szallitas_kezdete"] > "2026-09-12").all()
@@ -439,3 +440,196 @@ def test_forrasok_listaja():
     assert len(E.FORRASOK) >= 8
     assert all(f["cim"].startswith("https://") and f["nev"] and f["leiras"] for f in E.FORRASOK)
     assert any("MEKH" in f["nev"] for f in E.FORRASOK) and any("MAVIR" in f["nev"] for f in E.FORRASOK)
+
+
+# --------------------------------------------------------------- árlista beolvasása
+
+import beolvasas as BE  # noqa: E402
+
+MA_BE = date(2026, 9, 13)
+
+MAGYAR_LEVEL = """Tisztelt Partnerünk!
+
+Mai indikatív áraink (EUR/MWh), villamos energia, magyar zóna:
+
+Termék        Base     Peak
+Okt-26       128,45   156,90
+Nov-26       134,20   162,10
+Q4-26        131,80   159,40
+Q1-27        118,55   142,30
+Cal-27        96,20   118,75
+Cal-28        88,40   107,20
+
+Földgáz (CEGH, EUR/MWh):
+Okt-26        84,30
+Q1-27         86,15
+Cal-27        79,10
+
+Az árak tájékoztató jellegűek, 2026.09.13. 09:00 állapot.
+"""
+
+ANGOL_LEVEL = """HU POWER OTC CLOSE 12-Sep-2026
+BASE
+OCT 26: 128.50
+Q4 26: 131.75
+CAL 27: 96.15
+CAL 28: 88.30
+CAL 29: 84.10
+PEAK
+OCT 26: 156.80
+CAL 27: 118.60
+"""
+
+HTML_LEVEL = """<html><body><table>
+<tr><th>Termék</th><th>Zsinór</th><th>Csúcs</th></tr>
+<tr><td>2026. október</td><td>128,45</td><td>156,90</td></tr>
+<tr><td>2027. I. negyedév</td><td>118,55</td><td>142,30</td></tr>
+<tr><td>2027. év</td><td>96,20</td><td>118,75</td></tr>
+<tr><td>38. hét</td><td>115,00</td><td>140,00</td></tr>
+</table></body></html>"""
+
+
+def ar(tabla, piac, termek, tipus):
+    sor = tabla[(tabla["piac"] == piac) & (tabla["termek"] == termek) & (tabla["tipus"] == tipus)]
+    return None if sor.empty else sor.iloc[0]["ar"]
+
+
+def test_magyar_arlista_beolvasasa():
+    t = BE.elemez(MAGYAR_LEVEL, MA_BE)
+    assert ar(t, "Villamos", "2026. október", "Zsinór") == 128.45
+    assert ar(t, "Villamos", "2026. október", "Csúcs") == 156.90
+    assert ar(t, "Villamos", "2026. IV. negyedév", "Zsinór") == 131.80
+    assert ar(t, "Villamos", "2027. év", "Zsinór") == 96.20
+    assert ar(t, "Villamos", "2028. év", "Csúcs") == 107.20
+    assert ar(t, "Gáz", "2026. október", "Alap") == 84.30
+    assert ar(t, "Gáz", "2027. év", "Alap") == 79.10
+    # a terméknévben lévő évszám nem lehet ár, és a dátumsorból nem lesz termék
+    assert (t["ar"] > 50).all()
+    assert "2026. szeptember" not in set(t["termek"])
+
+
+def test_angol_arlista_szakaszfeliratokkal():
+    t = BE.elemez(ANGOL_LEVEL, MA_BE)
+    assert ar(t, "Villamos", "2026. október", "Zsinór") == 128.50
+    assert ar(t, "Villamos", "2026. október", "Csúcs") == 156.80
+    assert ar(t, "Villamos", "2027. év", "Csúcs") == 118.60
+    assert ar(t, "Villamos", "2029. év", "Zsinór") == 84.10
+    assert set(t["piac"]) == {"Villamos"}
+
+
+def test_html_tablazat_beolvasasa():
+    t = BE.elemez(BE.html_szoveggé(HTML_LEVEL), MA_BE)
+    assert ar(t, "Villamos", "2026. október", "Zsinór") == 128.45
+    assert ar(t, "Villamos", "2027. I. negyedév", "Csúcs") == 142.30
+    assert ar(t, "Villamos", "2026. 38. hét", "Zsinór") == 115.00
+
+
+def test_eml_fajl_kinyerese():
+    level = ("From: kereskedo@example.com\r\nTo: en@example.com\r\nSubject: Napi arak\r\n"
+             "Content-Type: text/plain; charset=utf-8\r\n\r\nCal-27 96,20 118,75\r\n")
+    szoveg = BE.szoveg_kinyerese("arak.eml", level.encode("utf-8"))
+    t = BE.elemez(szoveg, MA_BE)
+    assert ar(t, "Villamos", "2027. év", "Zsinór") == 96.20
+
+
+def test_idoszak_felismerese_valtozatok():
+    esetek = [("Cal 27", date(2027, 1, 1)), ("CAL-2028", date(2028, 1, 1)),
+              ("Q1/27", date(2027, 1, 1)), ("2027 Q3", date(2027, 7, 1)),
+              ("2027. IV. negyedév", date(2027, 10, 1)), ("Okt-26", date(2026, 10, 1)),
+              ("Dec 2026", date(2026, 12, 1)), ("2026. november", date(2026, 11, 1)),
+              ("W40", date(2026, 9, 28)), ("téli szezon", date(2026, 10, 1))]
+    for szoveg, vart_kezdet in esetek:
+        talalat = BE.idoszak_felismerese(szoveg, MA_BE)
+        assert talalat is not None and talalat[0] == vart_kezdet, szoveg
+    assert BE.idoszak_felismerese("Tisztelt Partnerünk!", MA_BE) is None
+    assert BE.idoszak_felismerese("Cal-35", MA_BE) is None  # túl távoli év
+
+
+def test_arak_kiolvasasa():
+    assert BE.arak_a_sorban("128,45 156,90") == [128.45, 156.9]
+    assert BE.arak_a_sorban("1 234,56") == [1234.56]
+    assert BE.arak_a_sorban("96.15") == [96.15]
+    assert BE.arak_a_sorban("-2,87 % valtozas") == []  # a százalék nem ár
+    assert BE.arak_a_sorban("2026 2027") == []  # évszám nem ár
+    assert BE.arak_a_sorban("nincs benne szam") == []
+
+
+def test_ures_es_ertelmetlen_bemenet():
+    assert BE.elemez("", MA_BE).empty
+    assert BE.elemez("Tisztelt Partnerünk! Köszönjük megkeresését.", MA_BE).empty
+    assert BE.elemez("véletlen szöveg 12345 és 99", MA_BE).empty
+
+
+def test_beolvasott_arak_atvehetok_a_jegyzesekbe():
+    t = BE.elemez(MAGYAR_LEVEL, MA_BE, jegyzes_nap=date(2026, 9, 11))
+    jegyzesek = H.egyesit(H.ures(), t.drop(columns=["forras_sor"]))
+    assert len(jegyzesek) == len(t) and set(jegyzesek["jegyzes_nap"]) == {"2026-09-11"}
+    assert list(jegyzesek.columns) == H.OSZLOPOK
+    gorbe = H.gorbe(jegyzesek, "Villamos")
+    assert not gorbe.empty and gorbe["szallitas_kezdete"].is_monotonic_increasing
+
+
+CEZ_LEVEL = """CEZH|edge - Napi indikatív OTC árak 2026.09.14
+Tisztelt Partnerünk!
+
+A CEZH|edge alkalmazásban publikálásra kerültek a napi OTC árak:
+Termék\t[EUR/MWh]\t
+M10-2026 HU BL\t207,00\t
+M11-2026 HU BL\t220,50\t
+M12-2026 HU BL\t213,50\t
+Q4-2026 HU BL\t213,25\t
+Q1-2027 HU BL\t210,50\t
+Q2-2027 HU BL\t128,70\t
+YR-2027 HU BL\t159,50\t
+YR-2028 HU BL\t119,00\t
+YR-2029 HU BL\t104,50\t
+
+Amennyiben a fenti termékek bármelyikére szeretne kötelező érvényű ajánlatot kérni, kérjük,
+lépjen be a CEZH|edge alkalmazásba!
+"""
+
+
+def test_cez_otc_arlista():
+    nap = BE.datum_felismerese(CEZ_LEVEL)
+    assert nap == date(2026, 9, 14)
+    t = BE.elemez(CEZ_LEVEL, date(2026, 9, 14), nap)
+    assert len(t) == 9 and set(t["piac"]) == {"Villamos"} and set(t["tipus"]) == {"Zsinór"}
+    assert ar(t, "Villamos", "2026. október", "Zsinór") == 207.00
+    assert ar(t, "Villamos", "2026. december", "Zsinór") == 213.50
+    assert ar(t, "Villamos", "2026. IV. negyedév", "Zsinór") == 213.25
+    assert ar(t, "Villamos", "2027. II. negyedév", "Zsinór") == 128.70
+    assert ar(t, "Villamos", "2027. év", "Zsinór") == 159.50
+    assert ar(t, "Villamos", "2029. év", "Zsinór") == 104.50
+    assert set(t["jegyzes_nap"]) == {"2026-09-14"}
+
+
+def test_cez_formatum_csucs_es_gaz_valtozata():
+    szoveg = ("M10-2026 HU PL\t265,00\n"
+              "YR-2027 HU PL\t196,30\n"
+              "Q1-2027 HU GAS\t86,15\n")
+    t = BE.elemez(szoveg, date(2026, 9, 14))
+    assert ar(t, "Villamos", "2026. október", "Csúcs") == 265.00
+    assert ar(t, "Villamos", "2027. év", "Csúcs") == 196.30
+    assert ar(t, "Gáz", "2027. I. negyedév", "Alap") == 86.15
+
+
+def test_datum_felismerese_valtozatok():
+    assert BE.datum_felismerese("Napi árak 2026.09.14") == date(2026, 9, 14)
+    assert BE.datum_felismerese("Prices 14/09/2026") == date(2026, 9, 14)
+    assert BE.datum_felismerese("Daily close 2026-09-14") == date(2026, 9, 14)
+    assert BE.datum_felismerese("Nincs benne dátum") is None
+    assert BE.datum_felismerese("Hibás dátum 2026.13.45") is None
+
+
+def test_msg_fajl_olvasasa_hianyzo_csomag(monkeypatch):
+    import builtins
+    eredeti = builtins.__import__
+
+    def nincs_csomag(nev, *a, **k):
+        if nev == "extract_msg":
+            raise ImportError("nincs telepítve")
+        return eredeti(nev, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", nincs_csomag)
+    with pytest.raises(RuntimeError, match="extract-msg"):
+        BE.szoveg_kinyerese("level.msg", b"akarmi")

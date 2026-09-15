@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import beallitas as B
+import beolvasas as BE
 import elemzes as E
 import forrasok as F
 import hataridos as H
@@ -550,9 +551,10 @@ with lap_hataridos:
             H.ures(), T.szoveg_tablava(mentett.get("hataridos"), H.OSZLOPOK))
     tarolt = st.session_state.hataridos
 
-    st.markdown('<p class="ear-vezeto">A heti, havi, negyedéves, féléves és éves jegyzéseket kézzel kell '
-                'megadni: a tőzsdék ezeket csak előfizetéssel adják ki gépi lekérésre. A napi árlistát '
-                'a legtöbb energiakereskedő díjmentesen küldi az ügyfeleinek.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ear-vezeto">A heti, havi, negyedéves, féléves és éves jegyzéseket a tőzsdék '
+                'csak előfizetéssel adják ki gépi lekérésre, a napi árlistát viszont a legtöbb '
+                'energiakereskedő díjmentesen küldi. Töltsd fel a levelet, és az árak maguktól '
+                'bekerülnek a táblázatba.</p>', unsafe_allow_html=True)
 
     with st.expander("Árak megadása és mentése", expanded=tarolt.empty):
         feltoltott = st.file_uploader("Korábban mentett hataridos.csv betöltése", type="csv")
@@ -561,9 +563,55 @@ with lap_hataridos:
             tarolt = st.session_state.hataridos
             st.success(f"{len(tarolt)} jegyzés betöltve.")
 
+        with st.popover("Ajánlat beolvasása e-mailből"):
+            st.markdown('<p class="ear-megj">Töltsd fel a kereskedő levelét (msg, eml, txt, html vagy csv), '
+                        'vagy másold be a szövegét. A beolvasó felismeri a szokásos jelöléseket '
+                        '(Cal-27, YR-2027, Q1/27, M10-2026, Okt-26, 2027. október, 38. hét), és megkeresi '
+                        'mellettük az árat. Az eredményt ellenőrizheted, mielőtt bekerül a táblázatba.</p>',
+                        unsafe_allow_html=True)
+            level = st.file_uploader("Levél vagy árlista",
+                                     type=["msg", "eml", "txt", "html", "htm", "csv"],
+                                     key="hataridos_level")
+            beillesztett = st.text_area("Vagy másold be ide a levél szövegét", height=120,
+                                        key="hataridos_szoveg", label_visibility="collapsed",
+                                        placeholder="M10-2026 HU BL  207,00\nYR-2027 HU BL  159,50")
+            if st.button("Beolvasás", key="hataridos_beolvas"):
+                try:
+                    nyers = (BE.szoveg_kinyerese(level.name, level.getvalue()) if level is not None
+                             else beillesztett or "")
+                    nap = BE.datum_felismerese(nyers) or st.session_state.get("hataridos_nap") or ma
+                    nap = min(nap, ma)
+                    st.session_state.beolvasott = BE.elemez(nyers, ma, nap)
+                    st.session_state.beolvasott_nap = nap
+                except Exception as e:
+                    st.session_state.beolvasott = pd.DataFrame(columns=BE.OSZLOPOK)
+                    st.error(f"A fájlt nem sikerült feldolgozni: {e}")
+
+            talalt = st.session_state.get("beolvasott")
+            if talalt is not None and not talalt.empty:
+                nap = st.session_state.get("beolvasott_nap", ma)
+                st.success(f"{len(talalt)} ár felismerve, {hu_datum(nap, hetnap=False)} jegyzési nappal. "
+                           "Nézd át, és ha jó, vedd át a táblázatba.")
+                st.dataframe(talalt.rename(columns={"piac": "Piac", "termek": "Termék", "tipus": "Típus",
+                                                    "ar": "Ár", "forras_sor": "Forrássor"})
+                             [["Piac", "Termék", "Típus", "Ár", "Forrássor"]],
+                             hide_index=True, width="stretch", height=260)
+                if st.button("Átvétel a táblázatba", type="primary", key="hataridos_atvesz"):
+                    st.session_state.beolvasott_atveendo = talalt.drop(columns=["forras_sor"])
+                    st.session_state.hataridos_nap = nap
+                    st.session_state.beolvasott = None
+                    st.rerun()
+            elif talalt is not None:
+                st.warning("Ebben a szövegben nem találtam felismerhető terméket és árat. "
+                           "Másold be csak az ártáblázat sorait, vagy írd be kézzel.")
+
         jegyzes_nap = st.date_input("Jegyzés napja", value=ma, max_value=ma, format="YYYY.MM.DD",
                                     key="hataridos_nap")
         alap = H.alap_termekek(jegyzes_nap)
+        atveendo = st.session_state.pop("beolvasott_atveendo", None)
+        if atveendo is not None and not atveendo.empty:
+            st.session_state.hataridos = H.egyesit(st.session_state.hataridos, atveendo)
+            tarolt = st.session_state.hataridos
         korabbi = tarolt[tarolt["jegyzes_nap"] == jegyzes_nap.isoformat()]
         if not korabbi.empty:
             alap = pd.concat([korabbi, alap]).drop_duplicates(["piac", "termek", "tipus"], keep="first")

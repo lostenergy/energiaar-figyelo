@@ -82,6 +82,12 @@ A hosszabb szállítási időszakok (hét, hónap, negyedév, félév, szezon, g
 
 A **Határidős árak** fülön az alkalmazás felkínálja a piacon szokásos termékek listáját a mai naptól előre, neked csak az árat kell beírni azokhoz, amelyekre kaptál jegyzést. Utána látod az árgörbét, és azt, hogy az egyes termékek mennyivel drágábbak vagy olcsóbbak a mai azonnali árnál és az elmúlt hónap átlagánál.
 
+**Beolvasás e-mailből.** A panelen belül van egy „Ajánlat beolvasása e-mailből" gomb. Ide feltöltheted a kereskedő levelét (msg, eml, txt, html vagy csv), vagy egyszerűen bemásolhatod a szövegét. A beolvasó felismeri a szokásos jelöléseket, megkeresi mellettük az árat, kiolvassa a levélből a jegyzés napját, és megmutatja, melyik sorból mit olvasott ki. Csak akkor kerül a táblázatba, ha az „Átvétel a táblázatba" gombra kattintasz.
+
+Az Outlookból a legegyszerűbb a levelet az asztalra húzni, így msg fájl lesz belőle, és azt feltölteni. Alternatíva: jelöld ki az ártáblázatot a levélben, és másold be a szövegmezőbe.
+
+Felismert jelölések: `M10-2026`, `Q4-2026`, `YR-2027`, `Cal-27`, `Q1/27`, `Okt-26`, `Dec 2026`, `2027. IV. negyedév`, `2026. november`, `W40`, `38. hét`, téli és nyári szezon. A zsinór és a csúcs megkülönböztetése a `BL`, `PL`, `base`, `peak`, `zsinór`, `csúcs` szavakból történik, a gázt a `gas`, `gáz`, `CEGH`, `TTF` szavak jelzik.
+
 **Megőrzés.** A beírt árak az oldal bezárásáig élnek. Ha meg akarod tartani őket:
 1. A fülön kattints a **hataridos.csv letöltése** gombra.
 2. Töltsd fel a fájlt a GitHub-tárolóba (**Add file > Upload files**), `hataridos.csv` néven, a tároló gyökerébe.
