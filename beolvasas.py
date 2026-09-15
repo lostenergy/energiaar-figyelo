@@ -271,3 +271,31 @@ def elemez(szoveg: str, ma: date, jegyzes_nap: date | None = None) -> pd.DataFra
         return tabla
     tabla = tabla.drop_duplicates(["piac", "termek", "tipus"], keep="first")
     return tabla.sort_values(["piac", "szallitas_kezdete", "tipus"]).reset_index(drop=True)
+
+
+def tobb_fajl(fajlok, ma: date) -> tuple[pd.DataFrame, list[str]]:
+    """Több levél feldolgozása egyszerre. Visszaadja az összes felismert árat és a fájlonkénti jelentést.
+
+    Minden levél a saját dátumával kerül be, így egy hét anyaga egyszerre is feltölthető.
+    """
+    reszek, jelentes = [], []
+    for fajl in fajlok or []:
+        nev = getattr(fajl, "name", "levél")
+        try:
+            szoveg = szoveg_kinyerese(nev, fajl.getvalue())
+            nap = datum_felismerese(szoveg)
+            nap = min(nap, ma) if nap else ma
+            tabla = elemez(szoveg, ma, nap)
+        except Exception as e:
+            jelentes.append(f"{nev}: nem sikerült feldolgozni ({e})")
+            continue
+        if tabla.empty:
+            jelentes.append(f"{nev}: nem találtam benne árat")
+            continue
+        reszek.append(tabla)
+        jelentes.append(f"{nev}: {len(tabla)} ár, {nap.isoformat()} jegyzési nappal")
+    if not reszek:
+        return pd.DataFrame(columns=OSZLOPOK), jelentes
+    egyutt = pd.concat(reszek, ignore_index=True)
+    egyutt = egyutt.drop_duplicates(["jegyzes_nap", "piac", "termek", "tipus"], keep="last")
+    return egyutt.sort_values(["jegyzes_nap", "piac", "szallitas_kezdete", "tipus"]).reset_index(drop=True), jelentes

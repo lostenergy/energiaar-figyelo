@@ -633,3 +633,46 @@ def test_msg_fajl_olvasasa_hianyzo_csomag(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", nincs_csomag)
     with pytest.raises(RuntimeError, match="extract-msg"):
         BE.szoveg_kinyerese("level.msg", b"akarmi")
+
+
+class HamisFeltoltes:
+    """A Streamlit feltöltött fájljának utánzata."""
+
+    def __init__(self, name, tartalom: bytes):
+        self.name = name
+        self._t = tartalom
+
+    def getvalue(self):
+        return self._t
+
+
+def test_tobb_level_egyszerre():
+    kedd = CEZ_LEVEL.replace("2026.09.14", "2026.09.15").replace("159,50", "161,20")
+    fajlok = [HamisFeltoltes("hetfo.txt", CEZ_LEVEL.encode()),
+              HamisFeltoltes("kedd.txt", kedd.encode()),
+              HamisFeltoltes("ures.txt", b"Tisztelt Partnerunk! Koszonjuk."),
+              HamisFeltoltes("rossz.msg", b"ez nem egy valodi msg fajl")]
+    t, jelentes = BE.tobb_fajl(fajlok, date(2026, 9, 16))
+    assert len(t) == 18 and sorted(t["jegyzes_nap"].unique()) == ["2026-09-14", "2026-09-15"]
+    assert len(jelentes) == 4
+    assert "9 ár" in jelentes[0] and "2026-09-14" in jelentes[0]
+    assert "nem találtam benne árat" in jelentes[2]
+    assert "nem sikerült feldolgozni" in jelentes[3]
+    # a két nap ára külön sorban marad, így a mozgás követhető
+    ev27 = t[(t["termek"] == "2027. év") & (t["tipus"] == "Zsinór")].sort_values("jegyzes_nap")
+    assert list(ev27["ar"]) == [159.50, 161.20]
+
+
+def test_tobb_level_ures_lista():
+    t, jelentes = BE.tobb_fajl([], date(2026, 9, 16))
+    assert t.empty and jelentes == []
+
+
+def test_tobb_level_utan_gorbe_es_idosor():
+    kedd = CEZ_LEVEL.replace("2026.09.14", "2026.09.15").replace("159,50", "161,20")
+    fajlok = [HamisFeltoltes("a.txt", CEZ_LEVEL.encode()), HamisFeltoltes("b.txt", kedd.encode())]
+    t, _ = BE.tobb_fajl(fajlok, date(2026, 9, 16))
+    jegyzesek = H.egyesit(H.ures(), t.drop(columns=["forras_sor"]))
+    gorbe = H.gorbe(jegyzesek, "Villamos")  # alapból a legfrissebb jegyzési nap
+    assert set(gorbe["jegyzes_nap"]) == {"2026-09-15"}
+    assert len(gorbe) == 9 and gorbe["szallitas_kezdete"].is_monotonic_increasing

@@ -1,5 +1,8 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
+VERZIO = "v7"
+VERZIO_NAPJA = "2026-09-15"
+
 IDOZONA = "Europe/Budapest"
 
 # Villamos energia: Energy-Charts (Fraunhofer ISE), magyar ajánlati zóna

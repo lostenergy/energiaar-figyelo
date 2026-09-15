@@ -84,7 +84,9 @@ A **Határidős árak** fülön az alkalmazás felkínálja a piacon szokásos t
 
 **Beolvasás e-mailből.** A panelen belül van egy „Ajánlat beolvasása e-mailből" gomb. Ide feltöltheted a kereskedő levelét (msg, eml, txt, html vagy csv), vagy egyszerűen bemásolhatod a szövegét. A beolvasó felismeri a szokásos jelöléseket, megkeresi mellettük az árat, kiolvassa a levélből a jegyzés napját, és megmutatja, melyik sorból mit olvasott ki. Csak akkor kerül a táblázatba, ha az „Átvétel a táblázatba" gombra kattintasz.
 
-Az Outlookból a legegyszerűbb a levelet az asztalra húzni, így msg fájl lesz belőle, és azt feltölteni. Alternatíva: jelöld ki az ártáblázatot a levélben, és másold be a szövegmezőbe.
+Egyszerre több levél is feltölthető: jelöld ki őket az Outlookban, húzd az asztalra (mindegyikből külön msg fájl lesz), majd húzd be mindet a feltöltő mezőbe. Minden levél a saját dátumával kerül be, tehát egy hét vagy egy hónap anyaga egy menetben feldolgozható, és utána rögtön látszik, hogyan mozgott az egyes termékek ára. A beolvasó fájlonként jelenti, mit talált.
+
+Az Outlookból a legegyszerűbb a leveleket az asztalra húzni, így msg fájl lesz belőlük, és azokat feltölteni. Alternatíva: jelöld ki az ártáblázatot a levélben, és másold be a szövegmezőbe.
 
 Felismert jelölések: `M10-2026`, `Q4-2026`, `YR-2027`, `Cal-27`, `Q1/27`, `Okt-26`, `Dec 2026`, `2027. IV. negyedév`, `2026. november`, `W40`, `38. hét`, téli és nyári szezon. A zsinór és a csúcs megkülönböztetése a `BL`, `PL`, `base`, `peak`, `zsinór`, `csúcs` szavakból történik, a gázt a `gas`, `gáz`, `CEGH`, `TTF` szavak jelzik.
 

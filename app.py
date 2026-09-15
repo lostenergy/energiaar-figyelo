@@ -569,37 +569,49 @@ with lap_hataridos:
                         '(Cal-27, YR-2027, Q1/27, M10-2026, Okt-26, 2027. október, 38. hét), és megkeresi '
                         'mellettük az árat. Az eredményt ellenőrizheted, mielőtt bekerül a táblázatba.</p>',
                         unsafe_allow_html=True)
-            level = st.file_uploader("Levél vagy árlista",
+            level = st.file_uploader("Levelek vagy árlisták (több is lehet)",
                                      type=["msg", "eml", "txt", "html", "htm", "csv"],
-                                     key="hataridos_level")
+                                     accept_multiple_files=True, key="hataridos_level")
             beillesztett = st.text_area("Vagy másold be ide a levél szövegét", height=120,
                                         key="hataridos_szoveg", label_visibility="collapsed",
                                         placeholder="M10-2026 HU BL  207,00\nYR-2027 HU BL  159,50")
             if st.button("Beolvasás", key="hataridos_beolvas"):
                 try:
-                    nyers = (BE.szoveg_kinyerese(level.name, level.getvalue()) if level is not None
-                             else beillesztett or "")
-                    nap = BE.datum_felismerese(nyers) or st.session_state.get("hataridos_nap") or ma
-                    nap = min(nap, ma)
-                    st.session_state.beolvasott = BE.elemez(nyers, ma, nap)
-                    st.session_state.beolvasott_nap = nap
+                    if level:
+                        tabla, jelentes = BE.tobb_fajl(level, ma)
+                    else:
+                        nap = BE.datum_felismerese(beillesztett or "") or st.session_state.get("hataridos_nap") or ma
+                        tabla = BE.elemez(beillesztett or "", ma, min(nap, ma))
+                        jelentes = []
+                    st.session_state.beolvasott = tabla
+                    st.session_state.beolvasott_jelentes = jelentes
+                    st.session_state.beolvasott_nap = (
+                        date.fromisoformat(tabla["jegyzes_nap"].max()) if not tabla.empty else ma)
                 except Exception as e:
                     st.session_state.beolvasott = pd.DataFrame(columns=BE.OSZLOPOK)
-                    st.error(f"A fájlt nem sikerült feldolgozni: {e}")
+                    st.session_state.beolvasott_jelentes = []
+                    st.error(f"A feldolgozás nem sikerült: {e}")
 
             talalt = st.session_state.get("beolvasott")
+            jelentes = st.session_state.get("beolvasott_jelentes") or []
+            if jelentes:
+                st.markdown('<p class="ear-megj">' + "<br>".join(escape(j) for j in jelentes) + "</p>",
+                            unsafe_allow_html=True)
             if talalt is not None and not talalt.empty:
-                nap = st.session_state.get("beolvasott_nap", ma)
-                st.success(f"{len(talalt)} ár felismerve, {hu_datum(nap, hetnap=False)} jegyzési nappal. "
+                napok_szama = talalt["jegyzes_nap"].nunique()
+                st.success(f"{len(talalt)} ár felismerve {napok_szama} jegyzési napra. "
                            "Nézd át, és ha jó, vedd át a táblázatba.")
-                st.dataframe(talalt.rename(columns={"piac": "Piac", "termek": "Termék", "tipus": "Típus",
+                st.dataframe(talalt.rename(columns={"jegyzes_nap": "Jegyzés napja", "piac": "Piac",
+                                                    "termek": "Termék", "tipus": "Típus",
                                                     "ar": "Ár", "forras_sor": "Forrássor"})
-                             [["Piac", "Termék", "Típus", "Ár", "Forrássor"]],
+                             [["Jegyzés napja", "Piac", "Termék", "Típus", "Ár", "Forrássor"]],
                              hide_index=True, width="stretch", height=260)
-                if st.button("Átvétel a táblázatba", type="primary", key="hataridos_atvesz"):
+                if st.button("Átvétel és mentés", type="primary", key="hataridos_atvesz"):
                     st.session_state.beolvasott_atveendo = talalt.drop(columns=["forras_sor"])
-                    st.session_state.hataridos_nap = nap
+                    st.session_state.hataridos_nap = st.session_state.get("beolvasott_nap", ma)
                     st.session_state.beolvasott = None
+                    st.session_state.beolvasott_jelentes = []
+                    st.session_state.mentsd_a_jegyzeseket = True
                     st.rerun()
             elif talalt is not None:
                 st.warning("Ebben a szövegben nem találtam felismerhető terméket és árat. "
@@ -612,6 +624,17 @@ with lap_hataridos:
         if atveendo is not None and not atveendo.empty:
             st.session_state.hataridos = H.egyesit(st.session_state.hataridos, atveendo)
             tarolt = st.session_state.hataridos
+            if st.session_state.pop("mentsd_a_jegyzeseket", False):
+                uzenet = f"{len(atveendo)} ár átvéve."
+                if tarolo().mukodik:
+                    try:
+                        szoveg = T.tabla_szovegge(tarolt)
+                        tarolo().ir(TAROLT["hataridos"], szoveg, "Határidős jegyzések beolvasásból")
+                        st.session_state.setdefault("utoljara_mentve", {})["hataridos"] = szoveg
+                        uzenet += " Mentve a tárolóba."
+                    except T.TarolasHiba as e:
+                        uzenet += f" A mentés nem sikerült: {e}"
+                st.success(uzenet)
         korabbi = tarolt[tarolt["jegyzes_nap"] == jegyzes_nap.isoformat()]
         if not korabbi.empty:
             alap = pd.concat([korabbi, alap]).drop_duplicates(["piac", "termek", "tipus"], keep="first")
@@ -816,5 +839,5 @@ with lap_elozmeny:
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                        width="content")
     st.markdown('<p class="ear-megj">Források: Energy-Charts (Fraunhofer ISE, CC BY 4.0) és CEEGEX. '
-                'A CEEGEX árai csak belső számításra használhatók, továbbadni vagy közzétenni nem szabad.</p>',
-                unsafe_allow_html=True)
+                'A CEEGEX árai csak belső számításra használhatók, továbbadni vagy közzétenni nem szabad.<br>'
+                f'Alkalmazás: {B.VERZIO}, {B.VERZIO_NAPJA}.</p>', unsafe_allow_html=True)
