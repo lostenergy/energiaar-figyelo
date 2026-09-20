@@ -178,6 +178,6 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-20 10:06,mutato,gaz_30nap|2026-09-20,73.1,"Gáz másnapi ár, havi átlag"
 2026-09-20 10:06,mutato,aram_gaz_arany|2026-09-20,2.49,Áram és gáz árának aránya
 2026-09-20 11:28,holnapi_ar_hianyzik,2026-09-21|11,,11:28-kor még nem volt elérhető a holnapi áramár
-2026-09-20 11:28,mutato,deli_sav|2026-09-20,-0.5008,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-20 11:28,mutato,negativ_arany|2026-09-20,0.0161,Nulla vagy negatív árú negyedórák aránya
-2026-09-20 11:28,mutato,gorbe_irany|2026-09-20,-0.2403,Második év ára az elsőhöz képest
+2026-09-20 11:45,mutato,deli_sav|2026-09-20,-0.5008,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-20 11:45,mutato,negativ_arany|2026-09-20,0.0161,Nulla vagy negatív árú negyedórák aránya
+2026-09-20 11:45,mutato,gorbe_irany|2026-09-20,-0.2403,Második év ára az elsőhöz képest
