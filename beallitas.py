@@ -1,7 +1,7 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
-VERZIO = "v7"
-VERZIO_NAPJA = "2026-09-15"
+VERZIO = "v9"
+VERZIO_NAPJA = "2026-09-20"
 
 IDOZONA = "Europe/Budapest"
 
@@ -27,15 +27,34 @@ FRISS_ELTARTHATOSAG = 15 * 60
 CEEGEX_MASNAPI_URL = "https://ceegex.hu/en/market-data/daily-data"
 CEEGEX_NAPON_BELUL_URL = "https://ceegex.hu/en/market-data/hourly-data"
 
+# Euró-forint árfolyam: az Európai Központi Bank referenciaárfolyama, tartalékként a Frankfurter
+# szolgáltatás (szintén EKB-adat). Ha egyik sem érhető el, a tartalék értékkel számol, és jelzi.
+EKB_ARFOLYAM_URL = ("https://data-api.ecb.europa.eu/service/data/EXR/D.HUF.EUR.SP00.A"
+                    "?lastNObservations=1&format=csvdata")
+FRANKFURTER_URL = "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=HUF"
+EUR_HUF_TARTALEK = 365.0
+ARFOLYAM_ELTARTHATOSAG = 6 * 3600
+
 HTTP_FEJLEC = {"User-Agent": "Energiaar-figyelo/3.0 (belso hasznalat)"}
 HTTP_IDOKORLAT = 30
 
+# CPIFM arculati színek
 SZIN = {
-    "tinta": "#0F2A44",      # fő szöveg, holnapi görbe
-    "sargarez": "#C8923D",   # kiemelés, csúcsidő
-    "acel": "#7D8A97",       # másodlagos szöveg, mai görbe
-    "kod": "#EEF2F5",        # panelháttér
-    "vonal": "#D6DDE3",      # elválasztók, rács
-    "emelkedes": "#B04A3A",  # drágulás
-    "csokkenes": "#3F7D58",  # olcsóbbodás
+    "tinta": "#0F2A44",       # fő szöveg, holnapi görbe, sötét sáv
+    "tinta_mely": "#0A1E31",  # a sötét sáv mélyebb árnyalata
+    "sargarez": "#C8923D",    # arany kiemelés, csúcsidő
+    "arany_hatter": "#F0E2C2",  # világos arany háttér
+    "acel": "#6B7785",        # másodlagos szöveg, mai görbe
+    "kod": "#F4F6F8",         # kártyaháttér
+    "vonal": "#D6DDE3",       # elválasztók, rács
+    "emelkedes": "#B85042",   # drágulás, kockázat
+    "csokkenes": "#5A8F6B",   # olcsóbbodás, előny
 }
+
+# A Lehetőségek fül alapértelmezései (a felületen átírhatók)
+ALAP_EVES_ARAM_MWH = 1000
+ALAP_EVES_GAZ_MWH = 800
+# Irodaház: az áramfogyasztás ekkora része esik a csúcsidőszakba (hétköznap 8 és 20 óra között)
+ALAP_CSUCS_ARANY = 0.62
+# Irodaházi gázfelhasználás negyedéves megoszlása (fűtési idény súlyával): I., II., III., IV. negyedév
+GAZ_NEGYEDEVES_SULY = (0.42, 0.11, 0.04, 0.43)

@@ -97,11 +97,30 @@ Felismert jelölések: `M10-2026`, `Q4-2026`, `YR-2027`, `Cal-27`, `Q1/27`, `Okt
 
 Így hetek alatt összegyűlik az árgörbe története is: az alkalmazás megmutatja, hogyan mozgott például a 2027-es éves termék ára az elmúlt jegyzési napokon.
 
+## Lehetőségek fül
+
+Ez a fül minden frissítéskor újraszámolja, mit tartogat a piac, és milyen szerződés illene a fogyasztáshoz.
+
+**Mit tartogat a piac?** Néhány mondat és számkártya: mennyit áraz a piac a következő hónapra és a télre, merre tart a görbe a következő években, mikor olcsó az áram napon belül, és milyen gyakori a negatív ár. A határidős részhez beolvasott jegyzés kell (Határidős árak fül); nélküle csak a tényleges árakból dolgozik.
+
+**Milyen szerződés lenne jó?** Megadod az éves áram- és gázfogyasztást, a fogyasztási mintát (irodaház, egyenletes vagy egyedi) és azt, hogy mennyit rögzítenél előre (óvatos 85, kiegyensúlyozott 70, rugalmas 50 százalék). Az alkalmazás két kártyán mutatja:
+
+- **az ideális terméket**, akkor is, ha a tőzsdén nincs ilyen (irodai mintára szabott áram, fűtési mintára szabott gáz),
+- **ami a piacon a legközelebb áll hozzá**: áramnál zsinór (base) és csúcs (peak) termék pontosan kiszámolt keverékét, gáznál a negyedéves vagy szezonális termékeket a fűtési idény súlyával,
+- **mennyibe kerülne egy év** három módon: minden fix, a javasolt keverék, minden a másnapi áron, a lehetséges szórással együtt,
+- **hogyan érdemes beszerezni**: a rögzítendő mennyiség elosztása hónapokra (sávos beszerzés).
+
+Ha a kereskedő csak zsinór árat küld, a csúcs árát az elmúlt év tényleges árainak arányából becsüli, és ezt jelzi. Döntéstámogatás, nem ajánlat: a számok nettó energiaárak, díjak és adók nélkül.
+
+**Mit tanultunk eddig?** Minden frissítés feljegyzi a megfigyelési naplóba (`data/megfigyelesek.csv`), mi volt új: megérkezett-e a holnapi áramár és mikor, jött-e új gázár vagy jegyzés, és napi egy értékkel a fő mutatókat. Ezek összegzése itt jelenik meg: például hány órakor érkezik jellemzően a holnapi ár, merre mozdult a jövő évi ár, erősödik-e a déli olcsó sáv. A javaslat is figyelembe veszi: ha a jövő évi ár a megfigyelések alatt emelkedik, a beszerzési terv első részleteit érdemes előrébb hozni, ha csökken, nem kell sietni.
+
 ## Napi használat
 
 Nyisd meg az alkalmazást, és nézd meg a számokat. Ha közben új ár jelent meg, nyomd meg a **Frissítés** gombot.
 
-Öt fül van: **Villamos energia** (mai és holnapi nap egy folyamatos, 48 órás görbén, számkártyákkal és időszaki átlagokkal), **Földgáz**, **Határidős árak**, **Piaci kép** (számokban összefoglalt helyzetkép és ingyenes elemzési források), valamint **Előzmények** és letöltés.
+Fent egy sötét sáv mutatja a legfontosabbat: mennyibe kerül az áram most, ma és holnap átlagosan, mennyi a gáz, mindez euróban és forintban is (Ft/kWh, az Európai Központi Bank árfolyamával). Alatta egy 24 órás színes csík mutatja, mikor érdemes áramot használni: zöld a nap nyolc legolcsóbb órája, vörös a nyolc legdrágább.
+
+Öt fül van: **Villamos energia** (mai és holnapi nap egy folyamatos, 48 órás görbén, a mostani pillanat jelölésével), **Földgáz**, **Lehetőségek**, **Határidős árak**, valamint **Előzmények** és letöltés.
 
 - A holnapi villamos ár általában **13 óra körül** jelenik meg. Előtte a mai nap görbéje látszik.
 - A CEEGEX másnapi gázára a kereskedési nap folyamán alakul ki, a **CEEREP** index 17:30 után kerül ki.
@@ -114,7 +133,7 @@ Nyisd meg az alkalmazást, és nézd meg a számokat. Ha közben új ár jelent 
 
 ## Beállítások
 
-A `beallitas.py` fájlban módosítható a csúcsidő (alapból 8 és 20 óra között) és az előzmény hossza (`ELOZMENY_NAP`). GitHubon a fájlra kattintva a ceruza ikonnal szerkeszthető, mentés után az alkalmazás magától újraindul.
+A `beallitas.py` fájlban módosítható a csúcsidő (alapból 8 és 20 óra között), az előzmény hossza (`ELOZMENY_NAP`), a Lehetőségek fül alapértelmezett fogyasztása és irodai mintája, valamint a gáz negyedéves megoszlása (`GAZ_NEGYEDEVES_SULY`). GitHubon a fájlra kattintva a ceruza ikonnal szerkeszthető, mentés után az alkalmazás magától újraindul.
 
 **Adathasználat.** Energy-Charts (Fraunhofer ISE, CC BY 4.0 licenc) és CEEGEX. A CEEGEX árai belső számításra szabadon használhatók, továbbadásuk vagy közzétételük külön szerződéshez kötött.
 

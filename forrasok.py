@@ -234,3 +234,56 @@ def egyesit(reszek: list[pd.DataFrame], kulcs: str) -> pd.DataFrame:
 
 def ures(oszlopok: list[str]) -> pd.DataFrame:
     return pd.DataFrame(columns=oszlopok)
+
+
+# ---------------------------------------------------------------- Euró-forint árfolyam
+
+def feldolgoz_ekb_csv(szoveg: str) -> tuple[float, str] | None:
+    """Az EKB csvdata válaszából az utolsó árfolyam és a hozzá tartozó nap."""
+    import csv
+    import io
+    try:
+        sorok = list(csv.DictReader(io.StringIO(szoveg)))
+    except csv.Error:
+        return None
+    for sor in reversed(sorok):
+        ertek, nap = szam(sor.get("OBS_VALUE")), (sor.get("TIME_PERIOD") or "").strip()
+        if ertek and 200 < ertek < 800 and nap:
+            return ertek, nap
+    return None
+
+
+def feldolgoz_frankfurter(adat: dict) -> tuple[float, str] | None:
+    try:
+        ertek = float(adat["rates"]["HUF"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return (ertek, str(adat.get("date", ""))) if 200 < ertek < 800 else None
+
+
+def leker_arfolyam() -> dict:
+    """EUR/HUF referenciaárfolyam. Sosem dob hibát: ha minden forrás kiesik, a tartalékkal számol."""
+    try:
+        valasz = requests.get(B.EKB_ARFOLYAM_URL, headers=B.HTTP_FEJLEC, timeout=15)
+        if valasz.status_code == 200:
+            eredmeny = feldolgoz_ekb_csv(valasz.text)
+            if eredmeny:
+                return {"arfolyam": eredmeny[0], "nap": eredmeny[1], "forras": "EKB"}
+    except requests.RequestException:
+        pass
+    try:
+        valasz = requests.get(B.FRANKFURTER_URL, headers=B.HTTP_FEJLEC, timeout=15)
+        if valasz.status_code == 200:
+            eredmeny = feldolgoz_frankfurter(valasz.json())
+            if eredmeny:
+                return {"arfolyam": eredmeny[0], "nap": eredmeny[1], "forras": "EKB (Frankfurter)"}
+    except (requests.RequestException, ValueError):
+        pass
+    return {"arfolyam": B.EUR_HUF_TARTALEK, "nap": "", "forras": "becsült"}
+
+
+def ft_kwh(eur_mwh, arfolyam: float) -> float | None:
+    """EUR/MWh átváltása Ft/kWh-ra (nettó nagykereskedelmi ár, díjak és adók nélkül)."""
+    if eur_mwh is None or pd.isna(eur_mwh):
+        return None
+    return float(eur_mwh) * arfolyam / 1000
