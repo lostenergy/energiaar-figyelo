@@ -174,9 +174,9 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-20 10:06,jegyzes,2026-09-17,9.0,9 határidős jegyzés érkezett a 2026-09-17 napra
 2026-09-20 10:06,jegyzes,2026-09-18,9.0,9 határidős jegyzés érkezett a 2026-09-18 napra
 2026-09-20 10:06,mutato,aram_30nap|2026-09-20,181.87,"Villamos zsinórár, 30 napos átlag"
-2026-09-20 10:06,mutato,deli_sav|2026-09-20,-0.5008,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-20 10:06,mutato,negativ_arany|2026-09-20,0.0161,Nulla vagy negatív árú negyedórák aránya
 2026-09-20 10:06,mutato,fwd_jovo_ev|2026-09-20,154.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-09-20 10:06,mutato,gorbe_irany|2026-09-20,-0.2403,Második év ára az elsőhöz képest
 2026-09-20 10:06,mutato,gaz_30nap|2026-09-20,73.1,"Gáz másnapi ár, havi átlag"
 2026-09-20 10:06,mutato,aram_gaz_arany|2026-09-20,2.49,Áram és gáz árának aránya
+2026-09-20 10:07,mutato,deli_sav|2026-09-20,-0.5008,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-20 10:07,mutato,negativ_arany|2026-09-20,0.0161,Nulla vagy negatív árú negyedórák aránya
+2026-09-20 10:07,mutato,gorbe_irany|2026-09-20,-0.2403,Második év ára az elsőhöz képest
