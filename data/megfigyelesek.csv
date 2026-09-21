@@ -187,6 +187,6 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-21 01:04,mutato,fwd_jovo_ev|2026-09-21,154.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
 2026-09-21 01:04,mutato,gaz_30nap|2026-09-21,73.56,"Gáz másnapi ár, havi átlag"
 2026-09-21 01:04,mutato,aram_gaz_arany|2026-09-21,2.48,Áram és gáz árának aránya
-2026-09-21 06:58,mutato,deli_sav|2026-09-21,-0.5347,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-21 06:58,mutato,negativ_arany|2026-09-21,0.0148,Nulla vagy negatív árú negyedórák aránya
-2026-09-21 06:58,mutato,gorbe_irany|2026-09-21,-0.2403,Második év ára az elsőhöz képest
+2026-09-21 09:32,mutato,deli_sav|2026-09-21,-0.5347,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-21 09:32,mutato,negativ_arany|2026-09-21,0.0148,Nulla vagy negatív árú negyedórák aránya
+2026-09-21 09:32,mutato,gorbe_irany|2026-09-21,-0.2403,Második év ára az elsőhöz képest
