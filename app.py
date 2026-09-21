@@ -148,8 +148,55 @@ table.ear-tabla td.ear-kiemelt {{ font-weight: 700; }}
 table.ear-tabla td small, table.ear-tabla td .halvany {{ color: {SZ['acel']}; font-size: 0.76rem; }}
 .ear-fel {{ color: {SZ['emelkedes']}; font-weight: 700; }}
 .ear-le {{ color: {SZ['csokkenes']}; font-weight: 700; }}
-[data-baseweb="tab-list"] {{ gap: 1.2rem; }}
-[data-baseweb="tab"] p {{ font-size: 0.98rem; }}
+/* Fülek: teljes szélességű, színes gombsor. A régebbi (baseweb) és az újabb Streamlit-szerkezetre is. */
+[data-baseweb="tab-list"], [data-testid="stTabs"] [role="tablist"] {{
+  display: flex !important; width: 100%; gap: 6px; background: {SZ['kod']}; padding: 6px;
+  border-radius: 14px; border: 1px solid {SZ['vonal']}; overflow: visible !important; margin-bottom: 0.4rem;
+}}
+[data-baseweb="tab"], [data-testid="stTabs"] [role="tab"] {{
+  flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; height: auto !important;
+  padding: 0.7rem 0.6rem !important; margin: 0 !important; border-radius: 10px; background: #FFFFFF;
+  border: 1px solid {SZ['vonal']}; cursor: pointer; transition: background 0.15s, color 0.15s;
+}}
+[data-baseweb="tab"] p, [data-testid="stTabs"] [role="tab"] p {{
+  font-size: 0.98rem !important; font-weight: 700; color: {SZ['tinta']} !important; margin: 0 !important;
+  white-space: normal; line-height: 1.2;
+}}
+[data-baseweb="tab"]:hover, [data-testid="stTabs"] [role="tab"]:hover {{
+  background: {SZ['arany_hatter']}; border-color: {SZ['sargarez']};
+}}
+[data-baseweb="tab"][aria-selected="true"], [data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+  background: {SZ['tinta']}; border-color: {SZ['tinta']}; box-shadow: inset 0 -3px 0 {SZ['sargarez']};
+}}
+[data-baseweb="tab"][aria-selected="true"] p, [data-testid="stTabs"] [role="tab"][aria-selected="true"] p {{
+  color: #FFFFFF !important;
+}}
+[data-baseweb="tab"]:focus-visible, [data-testid="stTabs"] [role="tab"]:focus-visible {{
+  outline: 2px solid {SZ['sargarez']}; outline-offset: 2px;
+}}
+[data-baseweb="tab-highlight"], [data-baseweb="tab-border"],
+[data-testid="stTabs"] .react-aria-SelectionIndicator {{ display: none !important; }}
+
+/* Választógombok (például: mennyit rögzítsünk előre): teljes szélesség, színes kijelölés */
+[data-testid="stButtonGroup"], .stElementContainer:has(> [data-testid="stButtonGroup"]),
+[data-testid="stElementContainer"]:has(> [data-testid="stButtonGroup"]) {{ width: 100% !important; }}
+[data-testid="stButtonGroup"] [role="radiogroup"], [data-testid="stButtonGroup"] > div:last-child {{
+  display: flex !important; width: 100%; gap: 4px; background: {SZ['kod']}; padding: 4px;
+  border-radius: 10px; border: 1px solid {SZ['vonal']}; flex-wrap: nowrap;
+}}
+[data-testid="stButtonGroup"] button {{
+  flex: 1 1 0; min-width: 0; justify-content: center; border-radius: 7px !important; border: none !important;
+  background: transparent; color: {SZ['tinta']}; font-weight: 700; margin: 0 !important; padding: 0.4rem 0.3rem;
+}}
+[data-testid="stButtonGroup"] button p {{ font-weight: 700; white-space: nowrap; overflow: hidden;
+                                         text-overflow: ellipsis; }}
+[data-testid="stButtonGroup"] button:hover {{ background: {SZ['arany_hatter']}; color: {SZ['tinta']}; }}
+[data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[kind$="Active"] {{
+  background: {SZ['tinta']} !important; color: #FFFFFF !important; box-shadow: inset 0 -3px 0 {SZ['sargarez']};
+}}
+[data-testid="stButtonGroup"] button[aria-checked="true"] p, [data-testid="stButtonGroup"] button[kind$="Active"] p {{
+  color: #FFFFFF !important;
+}}
 [data-testid="stExpander"] summary p {{ font-size: 0.92rem; }}
 @media (max-width: 640px) {{
   .block-container {{ padding-left: 0.8rem; padding-right: 0.8rem; padding-top: 3.2rem; }}
@@ -162,6 +209,12 @@ table.ear-tabla td small, table.ear-tabla td .halvany {{ color: {SZ['acel']}; fo
   .hos-ora {{ height: 24px; }}
   .hos-orak span:nth-child(3n+2), .hos-orak span:nth-child(3n+3) {{ visibility: hidden; }}
   .ear-racs {{ grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }}
+  [data-baseweb="tab-list"], [data-testid="stTabs"] [role="tablist"] {{ gap: 4px; padding: 4px; flex-wrap: wrap; }}
+  [data-baseweb="tab"], [data-testid="stTabs"] [role="tab"] {{ flex: 1 1 30%; padding: 0.55rem 0.3rem !important; }}
+  [data-baseweb="tab"] p, [data-testid="stTabs"] [role="tab"] p {{ font-size: 0.82rem !important; white-space: nowrap; }}
+  .st-key-kockazat [role="radiogroup"], .st-key-kockazat [data-testid="stButtonGroup"] > div:last-child {{
+    flex-direction: column; }}
+  .st-key-kockazat button {{ flex: 1 1 auto; width: 100%; }}
   .ear-kartya .ertek {{ font-size: 1.08rem; }}
   table.ear-tabla td {{ font-size: 0.82rem; padding-left: 0.2rem; padding-right: 0.2rem; }}
 }}
@@ -675,7 +728,7 @@ with lap_villamos:
 
         alcim("Hogyan alakult a napi ár?")
         tav = st.segmented_control("Időtáv", ["30 nap", "90 nap", "1 év", "Teljes"], default="90 nap",
-                                   required=True, label_visibility="collapsed") or "90 nap"
+                                   required=True, label_visibility="collapsed", width="stretch") or "90 nap"
         napok_szama = {"30 nap": 30, "90 nap": 90, "1 év": 365, "Teljes": 100000}[tav]
         t = napi.copy()
         t["datum"] = pd.to_datetime(t["nap"])
@@ -1026,7 +1079,7 @@ with lap_lehetoseg:
     # ---- milyen szerződés lenne jó
     alcim("Milyen szerződés lenne jó?",
           "Irodaházi fogyasztásra számolva; a mennyiségek és a kockázatvállalás átírhatók")
-    b1, b2, b3, b4 = st.columns([1, 1.25, 1.75, 1])
+    b1, b2, b3 = st.columns([1, 1.4, 1])
     with b1:
         eves_aram = st.number_input("Éves áramfogyasztás (MWh)", min_value=10, max_value=500_000,
                                     value=B.ALAP_EVES_ARAM_MWH, step=50, key="eves_aram")
@@ -1043,12 +1096,13 @@ with lap_lehetoseg:
                                     help="Az éves fogyasztás mekkora része esik hétköznap 8 és 20 óra közé",
                                     key="csucs_arany")
     with b3:
-        szint = st.segmented_control("Mennyit rögzítsünk előre?", list(L.KOCKAZATI_SZINT), default="Kiegyensúlyozott",
-                                     required=True, key="kockazat") or "Kiegyensúlyozott"
-        fix_arany = L.KOCKAZATI_SZINT[szint]
-    with b4:
         eves_gaz = st.number_input("Éves gázfogyasztás (MWh)", min_value=10, max_value=500_000,
                                    value=B.ALAP_EVES_GAZ_MWH, step=50, key="eves_gaz")
+    szint_nevek = {n: f"{n}: {round(v * 100)} százalék fix" for n, v in L.KOCKAZATI_SZINT.items()}
+    szint = st.segmented_control("Mennyit rögzítsünk előre a várható fogyasztásból?", list(L.KOCKAZATI_SZINT),
+                                 format_func=lambda n: szint_nevek[n], default="Kiegyensúlyozott",
+                                 required=True, key="kockazat", width="stretch") or "Kiegyensúlyozott"
+    fix_arany = L.KOCKAZATI_SZINT[szint]
 
     trend_jovo_ev = M.trend(naplo, "fwd_jovo_ev")
     vj = L.villamos_javaslat(hataridos_most, napi, ma, eves_aram, csucs_arany, fix_arany, trend_jovo_ev)
