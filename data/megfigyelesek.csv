@@ -190,6 +190,6 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-21 11:53,mutato,aram_gaz_arany|2026-09-21,2.47,Áram és gáz árának aránya
 2026-09-21 14:18,holnapi_ar,2026-09-22,233.9,"Megérkezett a 2026-09-22 napi áramár: zsinór 233,90 EUR/MWh"
 2026-09-21 14:54,mutato,gaz_30nap|2026-09-21,73.88,"Gáz másnapi ár, havi átlag"
-2026-09-21 15:37,mutato,deli_sav|2026-09-21,-0.5347,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-21 15:37,mutato,negativ_arany|2026-09-21,0.0148,Nulla vagy negatív árú negyedórák aránya
-2026-09-21 15:37,mutato,gorbe_irany|2026-09-21,-0.2403,Második év ára az elsőhöz képest
+2026-09-21 15:38,mutato,deli_sav|2026-09-21,-0.5347,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-21 15:38,mutato,negativ_arany|2026-09-21,0.0148,Nulla vagy negatív árú negyedórák aránya
+2026-09-21 15:38,mutato,gorbe_irany|2026-09-21,-0.2403,Második év ára az elsőhöz képest
