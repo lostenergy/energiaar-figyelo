@@ -199,7 +199,7 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-22 11:25,holnapi_ar_hianyzik,2026-09-23|11,,11:25-kor még nem volt elérhető a holnapi áramár
 2026-09-22 11:25,gaz_da,2026-09-22,66.14,"Új CEEGEX másnapi gázár (2026-09-22): 66,14 EUR/MWh"
 2026-09-22 13:13,holnapi_ar_hianyzik,2026-09-23|13,,13:13-kor még nem volt elérhető a holnapi áramár
-2026-09-22 13:13,mutato,deli_sav|2026-09-22,-0.5231,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-22 13:13,mutato,negativ_arany|2026-09-22,0.0136,Nulla vagy negatív árú negyedórák aránya
-2026-09-22 13:13,mutato,gorbe_irany|2026-09-22,-0.2403,Második év ára az elsőhöz képest
 2026-09-22 13:13,mutato,gaz_30nap|2026-09-22,74.0,"Gáz másnapi ár, havi átlag"
+2026-09-22 13:37,mutato,deli_sav|2026-09-22,-0.5231,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-22 13:37,mutato,negativ_arany|2026-09-22,0.0136,Nulla vagy negatív árú negyedórák aránya
+2026-09-22 13:37,mutato,gorbe_irany|2026-09-22,-0.2403,Második év ára az elsőhöz képest
