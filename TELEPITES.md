@@ -120,12 +120,13 @@ Nyisd meg az alkalmazást, és nézd meg a számokat. Ha közben új ár jelent 
 
 Fent egy sötét sáv mutatja a legfontosabbat: mennyibe kerül az áram most, ma és holnap átlagosan, mennyi a gáz, mindez euróban és forintban is (Ft/kWh, az Európai Központi Bank árfolyamával). Alatta egy 24 órás színes csík mutatja, mikor érdemes áramot használni: zöld a nap nyolc legolcsóbb órája, vörös a nyolc legdrágább.
 
-Öt fül van: **Villamos energia** (mai és holnapi nap egy folyamatos, 48 órás görbén, a mostani pillanat jelölésével), **Földgáz**, **Lehetőségek**, **Határidős árak**, valamint **Előzmények** és letöltés.
+Hat fül van: **Villamos energia** (mai és holnapi nap egy folyamatos, 48 órás görbén, a mostani pillanat jelölésével), **Földgáz**, **Termelés**, **Lehetőségek**, **Határidős árak**, valamint **Előzmények** és letöltés.
 
 - A holnapi villamos ár általában **13 óra körül** jelenik meg. Előtte a mai nap görbéje látszik.
 - A CEEGEX másnapi gázára a kereskedési nap folyamán alakul ki, a **CEEREP** index 17:30 után kerül ki.
 - Az első betöltés lassabb, mert egyéves villamos előzményt tölt be. Utána gyors.
-- Az **Előzmények** fülön letöltheted Excelben a most látott adatokat, a beírt határidős jegyzésekkel együtt.
+- A **Termelés** fül mutatja, miből lett az áram: atom, földgáz, szél, nap és a behozatal, negyedórás bontásban, továbbá a beépített erőművi teljesítményt, annak kihasználtságát, és azt, mennyivel viszi lejjebb a napi árat a több napenergia.
+- Az **Előzmények** fülön letöltheted Excelben a most látott adatokat, a beírt határidős jegyzésekkel és a napi termeléssel együtt.
 
 **Alvó állapot (csak az A változatnál).** Ha 12 órán át senki nem nyitja meg, a Streamlit elaltatja az alkalmazást. Ilyenkor egy felébresztő gomb jelenik meg, és fél-egy perc múlva betölt. Adat nem vész el, mert minden lekérés élőben történik.
 

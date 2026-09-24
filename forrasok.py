@@ -287,3 +287,131 @@ def ft_kwh(eur_mwh, arfolyam: float) -> float | None:
     if eur_mwh is None or pd.isna(eur_mwh):
         return None
     return float(eur_mwh) * arfolyam / 1000
+
+
+# ---------------------------------------------------------------- Villamosenergia-termelés
+
+TERMELES_OSZLOPOK = ["unix", "ido", "nap", "negyedora", "ora", "perc", "atom", "foldgaz",
+                     "egyeb_fosszilis", "egyeb_megujulo", "szel", "napenergia", "fogyasztas",
+                     "nettó_import", "megujulo_arany"]
+
+# Az Energy-Charts angol forrásnevei magyar csoportokba sorolva
+FORRAS_CSOPORT = {
+    "Nuclear": "atom",
+    "Fossil gas": "foldgaz",
+    "Fossil brown coal / lignite": "egyeb_fosszilis",
+    "Fossil hard coal": "egyeb_fosszilis",
+    "Fossil oil": "egyeb_fosszilis",
+    "Others": "egyeb_fosszilis",
+    "Waste": "egyeb_fosszilis",
+    "Biomass": "egyeb_megujulo",
+    "Hydro Run-of-River": "egyeb_megujulo",
+    "Hydro water reservoir": "egyeb_megujulo",
+    "Hydro pumped storage": "egyeb_megujulo",
+    "Geothermal": "egyeb_megujulo",
+    "Other renewables": "egyeb_megujulo",
+    "Wind onshore": "szel",
+    "Wind offshore": "szel",
+    "Solar": "napenergia",
+    "Load": "fogyasztas",
+    "Cross border electricity trading": "nettó_import",
+    "Renewable share of load": "megujulo_arany",
+}
+TERMELO_CSOPORTOK = ["atom", "foldgaz", "egyeb_fosszilis", "egyeb_megujulo", "szel", "napenergia"]
+
+# A beépített teljesítmény néhány forrást más néven nevez meg, mint a termelési adat
+KAPACITAS_CSOPORT = {**FORRAS_CSOPORT, "Solar AC": "napenergia", "Solar gross": None,
+                     "Hydro Run-of-River": "egyeb_megujulo"}
+KAPACITAS_OSZLOPOK = ["ev", "csoport", "mw"]
+
+
+def leker_kapacitas() -> pd.DataFrame:
+    """Beépített erőművi teljesítmény forrásonként, évenként (Energy-Charts, ENTSO-E alapon)."""
+    try:
+        valasz = requests.get(B.KAPACITAS_URL, params={"country": "hu", "time_step": "yearly"},
+                              headers=B.HTTP_FEJLEC, timeout=B.HTTP_IDOKORLAT)
+    except requests.RequestException as e:
+        raise ForrasHiba(f"A beépített teljesítmény nem érhető el: {e}") from e
+    if valasz.status_code != 200:
+        raise ForrasHiba(f"Energy-Charts HTTP {valasz.status_code} (beépített teljesítmény)")
+    return feldolgoz_kapacitas(valasz.json())
+
+
+def feldolgoz_kapacitas(adat: dict) -> pd.DataFrame:
+    """A beépített teljesítmény évenként és forráscsoportonként, megawattban.
+
+    A forrás gigawattban adja az értékeket; itt megawattra váltjuk, hogy a termelési
+    adatokkal egy mértékegységben legyenek.
+    """
+    evek = [str(e) for e in (adat.get("time") or [])]
+    sorok = []
+    for elem in adat.get("production_types") or []:
+        csoport = KAPACITAS_CSOPORT.get(elem.get("name"))
+        if csoport is None or csoport not in TERMELO_CSOPORTOK:
+            continue
+        for ev, ertek in zip(evek, elem.get("data") or []):
+            if ertek is None:
+                continue
+            sorok.append({"ev": ev, "csoport": csoport, "mw": float(ertek) * 1000})
+    tabla = pd.DataFrame(sorok, columns=KAPACITAS_OSZLOPOK)
+    if tabla.empty:
+        return tabla
+    return (tabla.groupby(["ev", "csoport"], as_index=False)["mw"].sum()
+            .sort_values(["ev", "csoport"]).reset_index(drop=True))
+
+
+def leker_termeles(kezdet: date, veg: date, szakasz_nap: int = 30) -> pd.DataFrame:
+    """Magyar villamosenergia-termelés forrásonként, negyedórás bontásban (Energy-Charts)."""
+    reszek = []
+    aktualis = kezdet
+    while aktualis <= veg:
+        szakasz_vege = min(aktualis + timedelta(days=szakasz_nap - 1), veg)
+        parameterek = {"country": "hu", "start": aktualis.isoformat(), "end": szakasz_vege.isoformat()}
+        try:
+            valasz = requests.get(B.TERMELES_URL, params=parameterek, headers=B.HTTP_FEJLEC,
+                                  timeout=B.HTTP_IDOKORLAT)
+        except requests.RequestException as e:
+            raise ForrasHiba(f"A termelési adat nem érhető el: {e}") from e
+        if valasz.status_code == 404:
+            aktualis = szakasz_vege + timedelta(days=1)
+            continue
+        if valasz.status_code != 200:
+            raise ForrasHiba(f"Energy-Charts HTTP {valasz.status_code} (termelés)")
+        reszek.append(feldolgoz_termeles(valasz.json()))
+        aktualis = szakasz_vege + timedelta(days=1)
+    if not reszek:
+        return ures(TERMELES_OSZLOPOK)
+    tabla = pd.concat(reszek, ignore_index=True).drop_duplicates("unix", keep="last").sort_values("unix")
+    return tabla[(tabla["nap"] >= kezdet.isoformat()) & (tabla["nap"] <= veg.isoformat())].reset_index(drop=True)
+
+
+def feldolgoz_termeles(adat: dict) -> pd.DataFrame:
+    """Az API válaszából forráscsoportonkénti teljesítmény (MW) helyi idővel."""
+    idok = adat.get("unix_seconds") or []
+    if not idok:
+        return ures(TERMELES_OSZLOPOK)
+    tabla = pd.DataFrame({"unix": pd.Series(idok, dtype="int64")})
+    for csoport in TERMELO_CSOPORTOK + ["fogyasztas", "nettó_import", "megujulo_arany"]:
+        tabla[csoport] = 0.0 if csoport in TERMELO_CSOPORTOK else None
+    for elem in adat.get("production_types") or []:
+        csoport = FORRAS_CSOPORT.get(elem.get("name"))
+        if csoport is None:
+            continue
+        ertekek = pd.to_numeric(pd.Series(elem.get("data") or [])[:len(idok)], errors="coerce")
+        ertekek = ertekek.reindex(range(len(idok)))
+        if csoport in TERMELO_CSOPORTOK:
+            tabla[csoport] = tabla[csoport].add(ertekek.fillna(0.0), fill_value=0.0)
+        else:
+            tabla[csoport] = ertekek
+
+    lepes = tabla["unix"].shift(-1) - tabla["unix"]
+    lepes = lepes.fillna(tabla["unix"].diff()).fillna(900)
+    tabla["perc"] = (lepes / 60).round().astype(int).clip(upper=60)
+    helyi = pd.to_datetime(tabla["unix"], unit="s", utc=True).dt.tz_convert(B.IDOZONA)
+    tabla["ido"] = helyi.dt.strftime("%Y-%m-%d %H:%M")
+    tabla["nap"] = helyi.dt.strftime("%Y-%m-%d")
+    tabla["negyedora"] = helyi.dt.strftime("%H:%M")
+    tabla["ora"] = helyi.dt.hour
+    # A fogyasztás nélküli sorok (a jövő felé) nem hordoznak információt
+    tabla = tabla[tabla["fogyasztas"].notna()]
+    return tabla[TERMELES_OSZLOPOK].reset_index(drop=True)

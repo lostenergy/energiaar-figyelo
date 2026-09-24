@@ -21,6 +21,7 @@ MUTATO_NEVEK = {
     "fwd_jovo_ev": "Jövő évi zsinór termék ára (legfrissebb jegyzés)",
     "gorbe_irany": "Második év ára az elsőhöz képest",
     "gaz_30nap": "Gáz másnapi ár, havi átlag",
+    "nap_arany": "A napenergia részaránya a fogyasztásból",
     "aram_gaz_arany": "Áram és gáz árának aránya",
 }
 

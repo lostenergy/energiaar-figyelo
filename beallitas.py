@@ -1,13 +1,20 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
-VERZIO = "v10"
-VERZIO_NAPJA = "2026-09-21"
+VERZIO = "v13"
+VERZIO_NAPJA = "2026-09-24"
 
 IDOZONA = "Europe/Budapest"
 
 # Villamos energia: Energy-Charts (Fraunhofer ISE), magyar ajánlati zóna
 VILLAMOS_ZONA = "HU"
 ENERGY_CHARTS_URL = "https://api.energy-charts.info/price"
+# Villamosenergia-termelés forrásonként, ugyanabból a forrásból (ENTSO-E adat alapján)
+TERMELES_URL = "https://api.energy-charts.info/public_power"
+# Ennyi napnyi termelési előzményt tölt be az első futáskor
+TERMELES_ELOZMENY_NAP = 120
+# Beépített (telepített) erőművi teljesítmény forrásonként, évenként; ugyanabból a forrásból
+KAPACITAS_URL = "https://api.energy-charts.info/installed_power"
+KAPACITAS_ELTARTHATOSAG = 24 * 3600
 
 # Csúcsidőszak: 8 órától 20 óráig (a 20 óra már nem része)
 CSUCS_KEZDET = 8

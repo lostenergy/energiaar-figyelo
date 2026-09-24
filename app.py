@@ -25,6 +25,7 @@ import lehetosegek as L
 import megfigyeles as M
 import szamitas as S
 import tarolas as T
+import termeles as TE
 
 SZ = B.SZIN
 HONAPOK = ["január", "február", "március", "április", "május", "június", "július",
@@ -311,7 +312,8 @@ def mutat(fig: go.Figure) -> None:
 
 TAROLT = {"napi": "data/villamos_napi.csv", "negyedora": "data/villamos_15perc.csv",
           "gaz": "data/gaz_masnapi.csv", "gaz_wd": "data/gaz_napon_belul.csv",
-          "hataridos": "hataridos.csv", "naplo": "data/megfigyelesek.csv"}
+          "hataridos": "hataridos.csv", "naplo": "data/megfigyelesek.csv",
+          "termeles_napi": "data/termeles_napi.csv"}
 NEGYEDORA_MEGORZES = 70  # ennyi napnyi negyedórás árat őrzünk meg részletesen
 MERET_HATAR = 900_000     # a GitHub felülete egy megabájt fölött már nem kezeli jól a fájlokat
 
@@ -349,6 +351,21 @@ def villamos_elozmeny(vegnap: date, napok: int) -> pd.DataFrame:
 @st.cache_data(ttl=B.FRISS_ELTARTHATOSAG, show_spinner=False)
 def villamos_friss(ma: date) -> pd.DataFrame:
     return F.leker_villamos(ma - timedelta(days=B.FRISS_NAP), ma + timedelta(days=2))
+
+
+@st.cache_data(ttl=B.FRISS_ELTARTHATOSAG, show_spinner=False)
+def termeles_friss(ma: date) -> pd.DataFrame:
+    return F.leker_termeles(ma - timedelta(days=2), ma)
+
+
+@st.cache_data(ttl=B.ELOZMENY_ELTARTHATOSAG, show_spinner=False)
+def termeles_elozmeny(vegnap: date, napok: int) -> pd.DataFrame:
+    return F.leker_termeles(vegnap - timedelta(days=napok), vegnap)
+
+
+@st.cache_data(ttl=B.KAPACITAS_ELTARTHATOSAG, show_spinner=False)
+def kapacitas_adat() -> pd.DataFrame:
+    return F.leker_kapacitas()
 
 
 @st.cache_data(ttl=B.ARFOLYAM_ELTARTHATOSAG, show_spinner=False)
@@ -394,6 +411,25 @@ def betolt(ma: date, mentett: dict) -> dict:
             egyutt[o] = pd.to_numeric(egyutt[o], errors="coerce")
     ki["napi"] = egyutt
 
+    tarolt_termeles = T.szoveg_tablava(mentett.get("termeles_napi"), TE.NAPI_OSZLOPOK)
+    ki["termeles"] = F.ures(F.TERMELES_OSZLOPOK)
+    try:
+        ki["termeles"] = termeles_friss(ma)
+        hosszu_kell = (tarolt_termeles.empty or len(tarolt_termeles) < 45
+                       or tarolt_termeles["nap"].max() < (ma - timedelta(days=4)).isoformat())
+        if hosszu_kell:
+            try:
+                regebbi = termeles_elozmeny(ma - timedelta(days=3), B.TERMELES_ELOZMENY_NAP)
+                tarolt_termeles = TE.egyesit_napi(tarolt_termeles, TE.napi_osszesites(regebbi))
+            except Exception as e:
+                ki["hibak"].append(f"Termelési előzmény: {e}")
+    except Exception as e:
+        ki["hibak"].append(f"Termelés: {e}")
+    for oszlop in TE.NAPI_OSZLOPOK:
+        if oszlop != "nap" and oszlop in tarolt_termeles.columns:
+            tarolt_termeles[oszlop] = pd.to_numeric(tarolt_termeles[oszlop], errors="coerce")
+    ki["termeles_napi"] = TE.egyesit_napi(tarolt_termeles, TE.napi_osszesites(ki["termeles"]))
+
     try:
         gaz, gaz_wd = gaz_adatok(ma)
     except Exception as e:
@@ -426,7 +462,8 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
         else adat["villamos"]
     tetelek = [("napi", adat["napi"]), ("negyedora", negyedora),
                ("gaz", adat["gaz"]), ("gaz_wd", adat["gaz_wd"]),
-               ("naplo", st.session_state.get("naplo"))]
+               ("naplo", st.session_state.get("naplo")),
+               ("termeles_napi", adat.get("termeles_napi"))]
     mentve, gondok = [], []
     for kulcs, tabla in tetelek:
         if tabla is None or tabla.empty:
@@ -451,6 +488,8 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
 
 def mindent_ujra() -> None:
     villamos_friss.clear()
+    termeles_friss.clear()
+    kapacitas_adat.clear()
     gaz_adatok.clear()
     tarolt_adatok.clear()
 
@@ -475,6 +514,12 @@ with st.spinner("Árak lekérése..."):
     arf = arfolyam()
 
 villamos, napi, gaz, gaz_wd = adat["villamos"], adat["napi"], adat["gaz"], adat["gaz_wd"]
+termeles_ora, termeles_napi = adat["termeles"], adat["termeles_napi"]
+try:
+    kapacitas = kapacitas_adat()
+except Exception:
+    # A beépített teljesítmény csak kiegészítés: ha nincs meg, a fül többi része működik.
+    kapacitas = pd.DataFrame(columns=F.KAPACITAS_OSZLOPOK)
 hibak = list(dict.fromkeys(list(adat["hibak"]) + list(mentett.get("_hibak", []))))
 EUR_HUF = arf["arfolyam"]
 
@@ -515,6 +560,8 @@ mutatok = {
     "fwd_jovo_ev": jovo_ev,
     "gorbe_irany": L.gorbe_irany(gorbe_v)["valtozas"],
     "gaz_30nap": gk_most["honap"],
+    "nap_arany": (float(termeles_napi.iloc[-1]["nap_arany"])
+                  if not termeles_napi.empty and pd.notna(termeles_napi.iloc[-1]["nap_arany"]) else None),
     "aram_gaz_arany": E.arany(aram30, gk_most["honap"]),
 }
 uj_esemeny = M.uj_esemenyek(st.session_state.naplo, most.to_pydatetime(), napi, gaz,
@@ -614,8 +661,8 @@ szam_hely.markdown(f'<div class="hos-szamok">{szam_html}</div>{csik_html}{hullam
 if hibak:
     st.warning("Nem minden lépés sikerült:\n\n" + "\n\n".join(hibak))
 
-lap_villamos, lap_gaz, lap_lehetoseg, lap_hataridos, lap_elozmeny = st.tabs(
-    ["Villamos energia", "Földgáz", "Lehetőségek", "Határidős árak", "Előzmények"])
+lap_villamos, lap_gaz, lap_termeles, lap_lehetoseg, lap_hataridos, lap_elozmeny = st.tabs(
+    ["Villamos energia", "Földgáz", "Termelés", "Lehetőségek", "Határidős árak", "Előzmények"])
 
 
 # ------------------------------------------------------------------ villamos
@@ -1004,15 +1051,30 @@ with lap_hataridos:
                 fig.update_layout(hovermode="closest", legend=dict(y=1.02, font=dict(size=10)))
                 mutat(fig)
             with jobb:
+                # Két viszonyítási alap: az elmúlt 30 nap átlaga (ez a megbízhatóbb) és a mai nap ára.
+                # A fejlécben ott az alap értéke is, hogy a százalék visszakövethető legyen.
+                fo_tipus = "Zsinór" if piac == "Villamos" else "Alap"
+                havi_alap = azonnali.get(f"{piac}|{fo_tipus}|30")
+                mai_alap = azonnali.get(f"{piac}|{fo_tipus}")
                 sorok = []
                 for r in g.itertuples():
                     sorok.append(
                         f"<tr><td>{r.termek}<br><span class='halvany'>{r.tipus.lower()}</span></td>"
                         f"<td class='ear-kiemelt'>{hu(r.ar)}</td>"
-                        f"{valtozas_cella(H.felar(r.ar, azonnali.get(f'{piac}|{r.tipus}')))}"
-                        f"{valtozas_cella(H.felar(r.ar, azonnali.get(f'{piac}|{r.tipus}|30')))}</tr>")
-                st.markdown(tabla_html(["EUR/MWh", "Ár", "Azonnalihoz", "Havihoz"], sorok),
+                        f"{valtozas_cella(H.felar(r.ar, azonnali.get(f'{piac}|{r.tipus}|30')))}"
+                        f"{valtozas_cella(H.felar(r.ar, azonnali.get(f'{piac}|{r.tipus}')))}</tr>")
+                st.markdown(tabla_html(["EUR/MWh", "Ár", f"30 napos átlaghoz ({hu(havi_alap, 1, ha_nincs='-')})",
+                                        f"Mai árhoz ({hu(mai_alap, 1, ha_nincs='-')})"], sorok),
                             unsafe_allow_html=True)
+                forras = "HUPX másnapi" if piac == "Villamos" else "CEEGEX másnapi"
+                st.markdown(
+                    f'<p class="ear-megj">A százalék azt mutatja, mennyivel drágább (+) vagy olcsóbb (mínusz) a '
+                    f'határidős ár, mint a {forras} ár. Az első oszlop az elmúlt 30 nap átlagához mér '
+                    f'({hu(havi_alap, 1, ha_nincs="nincs adat")} EUR/MWh), a második a mai naphoz '
+                    f'({hu(mai_alap, 1, ha_nincs="nincs adat")} EUR/MWh). Egyetlen nap ára nagyot ugrálhat, '
+                    'ezért döntéshez a 30 napos összevetés a megbízhatóbb.'
+                    + (' A csúcs sorok a csúcsidőszak árához mérnek.' if (g["tipus"] == "Csúcs").any() else "")
+                    + '</p>', unsafe_allow_html=True)
 
         napok = sorted(tarolt["jegyzes_nap"].unique())
         if len(napok) > 1:
@@ -1032,6 +1094,192 @@ with lap_hataridos:
             datum_tengely(fig)
             fig.update_layout(showlegend=False, hovermode="closest")
             mutat(fig)
+
+
+# ------------------------------------------------------------------ termelés
+
+with lap_termeles:
+    if termeles_ora.empty:
+        st.info("Most nem érkezett termelési adat. Próbáld meg újra a Frissítés gombbal.")
+    else:
+        a = TE.aktualis(termeles_ora)
+        kartyak([
+            ("Fogyasztás most", hu(a.get("fogyasztas"), 0), a.get("ido", "")[-5:] + "-kor, MW"),
+            ("Hazai termelés", hu(a.get("termeles"), 0),
+             f"a fogyasztás {hu_szazalek(a['termeles'] / a['fogyasztas'] - 1, jel=False) if a.get('fogyasztas') else ''}"
+             + ("kal kevesebb" if a.get("fogyasztas") and a["termeles"] < a["fogyasztas"] else "kal több")),
+            ("Nettó behozatal", hu(a.get("nettó_import"), 0),
+             "import" if (a.get("nettó_import") or 0) >= 0 else "kivitel"),
+            ("Atom (Paks)", hu(a.get("atom"), 0), "MW"),
+            ("Nap", hu(a.get("napenergia"), 0),
+             f"a fogyasztás {hu(a['nap_arany'], 1)} százaléka" if a.get("nap_arany") is not None else "MW"),
+            ("Szél", hu(a.get("szel"), 0), "MW"),
+            ("Megújuló arány", hu(a.get("megujulo_arany"), 1) + " %" if a.get("megujulo_arany") is not None else "-",
+             "a fogyasztásból"),
+        ])
+
+        # 48 órás megoszlás forrásonként, a fogyasztás vonalával
+        alcim("Miből lett az áram az elmúlt két napban?",
+              "Negyedórás teljesítmény, MW. A rétegek összege a hazai termelés; a fogyasztásig hiányzó rész a behozatal.")
+        ket_nap = termeles_ora[termeles_ora["nap"] >= (ma - timedelta(days=1)).isoformat()].copy()
+        if not ket_nap.empty:
+            ket_nap["idopont"] = pd.to_datetime(ket_nap["ido"])
+            fig = go.Figure()
+            for kulcs, nev, szin in TE.CSOPORTOK:
+                fig.add_scatter(x=ket_nap["idopont"], y=ket_nap[kulcs], name=nev, mode="lines",
+                                stackgroup="termeles", line=dict(width=2, color="white"),
+                                fillcolor=szin, hovertemplate="%{y:.0f} MW<extra>" + nev + "</extra>")
+            fig.add_scatter(x=ket_nap["idopont"], y=ket_nap["fogyasztas"], name="Fogyasztás", mode="lines",
+                            line=dict(color=SZ["tinta"], width=2.5, dash="dot"),
+                            hovertemplate="%{y:.0f} MW<extra>Fogyasztás</extra>")
+            abra_alap(fig, 340)
+            fig.update_layout(hovermode="x unified", legend=dict(y=1.19), margin=dict(l=0, r=6, t=52, b=0))
+            for eltolas, szin in ((-1, SZ["acel"]), (0, SZ["tinta"])):
+                nap = ma + timedelta(days=eltolas)
+                if (ket_nap["nap"] == nap.isoformat()).any():
+                    fig.add_annotation(x=pd.Timestamp(f"{nap.isoformat()} 12:00"), y=1.0, yref="paper",
+                                       text=f"<b>{hu_datum(nap)}</b>", showarrow=False, yanchor="bottom",
+                                       font=dict(size=12, color=szin))
+            fig.add_vline(x=pd.Timestamp(f"{ma.isoformat()} 00:00"), line=dict(color=SZ["vonal"], width=1))
+            fig.update_xaxes(tickformat="%H:%M", dtick=6 * 3600 * 1000)
+            fig.update_yaxes(title=dict(text="MW", font=dict(size=11, color=SZ["acel"])), rangemode="tozero")
+            mutat(fig)
+
+        kihasznalt = TE.kihasznaltsag(kapacitas, termeles_ora, ma.isoformat())
+        novekedes = TE.kapacitas_novekedes(kapacitas)
+        if not kihasznalt.empty or not novekedes.empty:
+            bal_k, jobb_k = st.columns(2)
+            with bal_k:
+                alcim("Mennyit hozott ki a mai nap az erőműparkból?",
+                      "A mai csúcsteljesítmény a beépített teljesítmény százalékában")
+                if kihasznalt.empty:
+                    st.markdown('<p class="ear-megj">Ma még nincs elég adat ehhez.</p>', unsafe_allow_html=True)
+                else:
+                    k = kihasznalt.iloc[::-1]
+                    fig = go.Figure()
+                    fig.add_bar(x=k["arany"], y=k["nev"], orientation="h", marker=dict(color=list(k["szin"])),
+                                text=[f"{a:.0f}%".replace(".", ",") for a in k["arany"]],
+                                textposition="outside", cliponaxis=False,
+                                customdata=k[["csucs_mw", "beepitett_mw"]].values,
+                                hovertemplate="%{customdata[0]:.0f} MW a beépített %{customdata[1]:.0f} MW-ból"
+                                              "<extra>%{y}</extra>")
+                    abra_alap(fig, 300)
+                    fig.update_layout(showlegend=False, margin=dict(l=0, r=40, t=10, b=0), bargap=0.35)
+                    fig.update_xaxes(ticksuffix=" %", range=[0, max(100.0, float(k["arany"].max())) * 1.18])
+                    fig.update_yaxes(showgrid=False)
+                    mutat(fig)
+                    beep = TE.beepitett(kapacitas)
+                    if beep.get("napenergia"):
+                        st.markdown(
+                            '<p class="ear-megj">Beépített teljesítmény ' + str(beep.get("_ev", "")) + ' végén: '
+                            'naperőmű ' + f'{beep["napenergia"] / 1000:.1f}'.replace(".", ",") + ' GW, szélerőmű '
+                            + f'{beep.get("szel", 0) / 1000:.1f}'.replace(".", ",") + ' GW, atom '
+                            + f'{beep.get("atom", 0) / 1000:.1f}'.replace(".", ",") + ' GW. Ez az utolsó lezárt '
+                            'év adata, az azóta épült erőművek még nincsenek benne, ezért az arány néha '
+                            'száz százalék fölé is mehet.</p>',
+                            unsafe_allow_html=True)
+            with jobb_k:
+                alcim("Hogyan nőtt a beépített teljesítmény?", "Naperőmű és szélerőmű, gigawattban")
+                if novekedes.empty:
+                    st.markdown('<p class="ear-megj">A beépített teljesítmény most nem érhető el.</p>',
+                                unsafe_allow_html=True)
+                else:
+                    fig = go.Figure()
+                    for kulcs, nev, szin in TE.CSOPORTOK:
+                        resz = novekedes[novekedes["csoport"] == kulcs]
+                        if resz.empty:
+                            continue
+                        fig.add_scatter(x=resz["ev"], y=resz["mw"] / 1000, name=nev, mode="lines+markers",
+                                        line=dict(color=szin, width=2.5), marker=dict(size=8),
+                                        hovertemplate="%{y:.2f} GW<extra>" + nev + "</extra>")
+                        fig.add_annotation(x=resz["ev"].iloc[-1], y=float(resz["mw"].iloc[-1]) / 1000,
+                                           text=f"<b>{nev}</b>", showarrow=False, xanchor="right",
+                                           yanchor="bottom", yshift=8, font=dict(size=12, color=szin))
+                    abra_alap(fig, 300)
+                    fig.update_layout(hovermode="x unified", legend=dict(y=1.08),
+                                      margin=dict(l=0, r=10, t=30, b=0))
+                    fig.update_yaxes(title=dict(text="GW", font=dict(size=11, color=SZ["acel"])),
+                                     rangemode="tozero")
+                    mutat(fig)
+            mondat = TE.kapacitas_mondat(kapacitas)
+            if mondat:
+                st.markdown(f'<div class="ear-tanulsag"><p>{mondat}</p></div>', unsafe_allow_html=True)
+
+        bal, jobb = st.columns([3, 2])
+        with bal:
+            alcim("Hogyan hat a napenergia az árra?",
+                  "Minden pont egy nap: vízszintesen a napenergia részaránya, függőlegesen a napi zsinórár")
+            kapcsolat = TE.ar_kapcsolat(termeles_napi, napi, ma)
+            t = kapcsolat["tabla"]
+            if kapcsolat["pontok"] >= 10:
+                fig = go.Figure()
+                fig.add_scatter(x=t["nap_arany"], y=t["zsinor"], mode="markers", name="Napok",
+                                marker=dict(size=9, color=SZ["tinta"], opacity=0.75,
+                                            line=dict(color="white", width=2)),
+                                text=t["nap"], hovertemplate="%{text}: %{x:.1f} százalék, %{y:.1f} EUR/MWh<extra></extra>")
+                if kapcsolat["nap"]:
+                    meredekseg, _ = kapcsolat["nap"]
+                    tengely = pd.Series([t["nap_arany"].min(), t["nap_arany"].max()])
+                    kozep_x, kozep_y = t["nap_arany"].mean(), t["zsinor"].mean()
+                    fig.add_scatter(x=tengely, y=kozep_y + meredekseg * (tengely - kozep_x), mode="lines",
+                                    name="Illesztett irány", line=dict(color=SZ["sargarez"], width=2.5, dash="dash"),
+                                    hoverinfo="skip")
+                abra_alap(fig, 300)
+                fig.update_layout(hovermode="closest", legend=dict(y=1.06))
+                fig.update_xaxes(ticksuffix=" %",
+                                 title=dict(text="a napenergia részaránya", font=dict(size=11, color=SZ["acel"])))
+                fig.update_yaxes(title=dict(text="EUR/MWh", font=dict(size=11, color=SZ["acel"])))
+                mutat(fig)
+                st.markdown('<div class="ear-tanulsag">' + "".join(f"<p>{m}</p>" for m in kapcsolat["mondatok"])
+                            + "</div>", unsafe_allow_html=True)
+            else:
+                st.markdown('<p class="ear-megj">Ehhez legalább tíz teljes nap kell, ahol a termelés és az ár is '
+                            f'megvan. Most {kapcsolat["pontok"]} ilyen nap van; a többi a következő '
+                            'frissítésekkel gyűlik össze.</p>', unsafe_allow_html=True)
+        with jobb:
+            alcim("Mennyi a megújuló részarány?", "Napi értékek a fogyasztásból")
+            if not termeles_napi.empty:
+                n = termeles_napi.copy()
+                n["datum"] = pd.to_datetime(n["nap"])
+                n = n[n["datum"] >= pd.Timestamp(ma) - pd.Timedelta(days=90)]
+                fig = go.Figure()
+                for oszlop, nev, szin in (("megujulo_arany", "Összes megújuló", "#1baf7a"),
+                                          ("nap_arany", "Ebből nap", "#eda100")):
+                    fig.add_scatter(x=n["datum"], y=n[oszlop], name=nev, mode="lines",
+                                    line=dict(color=szin, width=2.2),
+                                    hovertemplate="%{y:.1f} százalék<extra>" + nev + "</extra>")
+                abra_alap(fig, 300)
+                datum_tengely(fig)
+                fig.update_layout(legend=dict(y=1.06))
+                fig.update_yaxes(ticksuffix=" %", rangemode="tozero")
+                mutat(fig)
+                utolso = termeles_napi.iloc[-1]
+                st.markdown(f'<p class="ear-megj">A legutóbbi teljes nap ({hu_datum(utolso["nap"])}): '
+                            f'megújuló {hu(utolso["megujulo_arany"], 1)} százalék, ebből nap '
+                            f'{hu(utolso["nap_arany"], 1)} százalék, behozatal '
+                            f'{hu(utolso["import_arany"], 1)} százalék.</p>', unsafe_allow_html=True)
+
+        with st.expander("Napi termelés táblázatban"):
+            if termeles_napi.empty:
+                st.markdown('<p class="ear-megj">Még nincs teljes napra összesített termelés.</p>',
+                            unsafe_allow_html=True)
+            else:
+                nevek = {f"{k}_mwh": f"{n} (MWh)" for k, n, _ in TE.CSOPORTOK}
+                nevek.update({"nap": "Dátum", "fogyasztas_mwh": "Fogyasztás (MWh)",
+                              "import_mwh": "Behozatal (MWh)", "megujulo_arany": "Megújuló, százalék",
+                              "nap_arany": "Ebből nap, százalék"})
+                oszlopok = ["nap"] + [f"{k}_mwh" for k, _, _ in TE.CSOPORTOK] + \
+                           ["fogyasztas_mwh", "import_mwh", "megujulo_arany", "nap_arany"]
+                tabla = termeles_napi[oszlopok].iloc[::-1].rename(columns=nevek)
+                beallitas = {nevek[o]: st.column_config.NumberColumn(format="%d")
+                             for o in oszlopok if o.endswith("_mwh")}
+                beallitas.update({nevek[o]: st.column_config.NumberColumn(format="%.1f")
+                                  for o in ("megujulo_arany", "nap_arany")})
+                st.dataframe(tabla, hide_index=True, width="stretch", height=320,
+                             column_config=beallitas)
+        st.markdown('<p class="ear-megj">Forrás: Energy-Charts (Fraunhofer ISE, CC BY 4.0), az adatok eredete '
+                    'az ENTSO-E átláthatósági platform. Az értékek MW teljesítményt, a napi táblázat MWh '
+                    'energiát mutat.</p>', unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------ lehetőségek
@@ -1274,7 +1522,7 @@ with lap_lehetoseg:
 
 @st.cache_data(show_spinner=False)
 def excel(napi_t: pd.DataFrame, v: pd.DataFrame, g: pd.DataFrame, w: pd.DataFrame,
-          h: pd.DataFrame) -> bytes:
+          h: pd.DataFrame, te: pd.DataFrame | None = None) -> bytes:
     puffer = io.BytesIO()
     with pd.ExcelWriter(puffer, engine="openpyxl") as iro:
         napi_t.rename(columns={"nap": "Szállítási nap", "zsinor": "Zsinór", "csucs": "Csúcs",
@@ -1292,6 +1540,14 @@ def excel(napi_t: pd.DataFrame, v: pd.DataFrame, g: pd.DataFrame, w: pd.DataFram
                               "tipus": "Típus", "szallitas_kezdete": "Szállítás kezdete",
                               "szallitas_vege": "Szállítás vége", "ar": "Ár (EUR/MWh)"}
                      ).to_excel(iro, sheet_name="Határidős", index=False)
+        if te is not None and not te.empty:
+            te.rename(columns={"nap": "Nap", "termeles_mwh": "Hazai termelés (MWh)",
+                               "fogyasztas_mwh": "Fogyasztás (MWh)", "import_mwh": "Nettó behozatal (MWh)",
+                               "nap_arany": "Nap, százalék", "szel_arany": "Szél, százalék",
+                               "megujulo_arany": "Megújuló, százalék", "import_arany": "Behozatal, százalék",
+                               "orak": "Lefedett órák",
+                               **{f"{k}_mwh": f"{n} (MWh)" for k, n, _ in TE.CSOPORTOK}}
+                     ).to_excel(iro, sheet_name="Termelés napi", index=False)
         for lap in iro.sheets.values():
             for oszlop in lap.columns:
                 lap.column_dimensions[oszlop[0].column_letter].width = 18
@@ -1334,7 +1590,8 @@ with lap_elozmeny:
 
     alcim("Letöltés")
     st.download_button("Minden adat Excelben",
-                       data=excel(napi, villamos, gaz, gaz_wd, st.session_state.get("hataridos", H.ures())),
+                       data=excel(napi, villamos, gaz, gaz_wd, st.session_state.get("hataridos", H.ures()),
+                                  termeles_napi),
                        file_name=f"energiaarak_{ma.isoformat()}.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                        width="content")
