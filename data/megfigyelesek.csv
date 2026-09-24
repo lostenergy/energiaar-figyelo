@@ -228,6 +228,6 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-24 14:00,holnapi_ar_hianyzik,2026-09-25|14,,14:00-kor még nem volt elérhető a holnapi áramár
 2026-09-24 15:32,holnapi_ar,2026-09-25,219.62,"Megérkezett a 2026-09-25 napi áramár: zsinór 219,62 EUR/MWh"
 2026-09-24 15:32,mutato,gaz_30nap|2026-09-24,74.07,"Gáz másnapi ár, havi átlag"
-2026-09-24 16:00,mutato,deli_sav|2026-09-24,-0.5102,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-24 16:00,mutato,negativ_arany|2026-09-24,0.0118,Nulla vagy negatív árú negyedórák aránya
-2026-09-24 16:00,mutato,gorbe_irany|2026-09-24,-0.2175,Második év ára az elsőhöz képest
+2026-09-24 17:50,mutato,deli_sav|2026-09-24,-0.5102,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-24 17:50,mutato,negativ_arany|2026-09-24,0.0118,Nulla vagy negatív árú negyedórák aránya
+2026-09-24 17:50,mutato,gorbe_irany|2026-09-24,-0.2175,Második év ára az elsőhöz képest
