@@ -1,6 +1,6 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
-VERZIO = "v13"
+VERZIO = "v14"
 VERZIO_NAPJA = "2026-09-24"
 
 IDOZONA = "Europe/Budapest"

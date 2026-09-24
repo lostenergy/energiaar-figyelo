@@ -19,6 +19,8 @@ import pandas as pd
 import requests
 
 API = "https://api.github.com/repos/{repo}/contents/{utvonal}"
+# Nyilvános tárolónál a fájlok kulcs nélkül is olvashatók; a nézegethető változat így dolgozik.
+NYERS = "https://raw.githubusercontent.com/{repo}/{ag}/{utvonal}"
 IDOKORLAT = 20
 
 
@@ -34,7 +36,9 @@ class Tarolo:
         self.token = str(b.get("token") or "").strip()
         self.repo = str(b.get("repo") or "").strip()
         self.ag = str(b.get("branch") or "main").strip()
+        # Írni csak kulccsal lehet, olvasni nyilvános tárolóból kulcs nélkül is.
         self.mukodik = bool(self.token and self.repo)
+        self.olvashat = bool(self.repo)
         self._sha: dict[str, str] = {}
 
     @property
@@ -44,8 +48,10 @@ class Tarolo:
 
     def olvas(self, utvonal: str) -> str | None:
         """A fájl tartalma szövegként, vagy None, ha nincs ilyen fájl."""
-        if not self.mukodik:
+        if not self.olvashat:
             return None
+        if not self.token:
+            return self._olvas_nyersen(utvonal)
         cim = API.format(repo=self.repo, utvonal=utvonal)
         try:
             valasz = requests.get(cim, params={"ref": self.ag}, headers=self.fejlec, timeout=IDOKORLAT)
@@ -60,6 +66,19 @@ class Tarolo:
         adat = valasz.json()
         self._sha[utvonal] = adat.get("sha", "")
         return base64.b64decode(adat.get("content", "")).decode("utf-8")
+
+    def _olvas_nyersen(self, utvonal: str) -> str | None:
+        """Olvasás hozzáférési kulcs nélkül, nyilvános tárolóból."""
+        cim = NYERS.format(repo=self.repo, ag=self.ag, utvonal=utvonal)
+        try:
+            valasz = requests.get(cim, timeout=IDOKORLAT)
+        except requests.RequestException as e:
+            raise TarolasHiba(f"A GitHub nem érhető el: {e}") from e
+        if valasz.status_code == 404:
+            return None
+        if valasz.status_code != 200:
+            raise TarolasHiba(f"GitHub HTTP {valasz.status_code} ({utvonal})")
+        return valasz.text
 
     def ir(self, utvonal: str, tartalom: str, uzenet: str) -> bool:
         """Fájl írása vagy felülírása. True, ha történt írás; False, ha nincs beállítva tároló."""

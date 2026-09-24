@@ -114,6 +114,44 @@ Ha a kereskedő csak zsinór árat küld, a csúcs árát az elmúlt év tényle
 
 **Mit tanultunk eddig?** Minden frissítés feljegyzi a megfigyelési naplóba (`data/megfigyelesek.csv`), mi volt új: megérkezett-e a holnapi áramár és mikor, jött-e új gázár vagy jegyzés, és napi egy értékkel a fő mutatókat. Ezek összegzése itt jelenik meg: például hány órakor érkezik jellemzően a holnapi ár, merre mozdult a jövő évi ár, erősödik-e a déli olcsó sáv. A javaslat is figyelembe veszi: ha a jövő évi ár a megfigyelések alatt emelkedik, a beszerzési terv első részleteit érdemes előrébb hozni, ha csökken, nem kell sietni.
 
+## Megosztható, nézegethető változat
+
+Ha valakinek csak meg akarod mutatni az árakat, ne a szerkesztői címet oszd meg: ott a látogató is
+frissíthet, feltölthet ajánlatot és átírhatja a jegyzéseket, és az bekerül a tárolóba. Helyette
+telepíts egy **második alkalmazást ugyanabból a tárolóból**, aminek a főfájlja a `nezo.py`. Ebben
+nincs Frissítés gomb, nincs feltöltés és nincs árbeírás, és hozzáférési kulcs nélkül fizikailag sem
+tud írni a tárolóba, csak olvasni belőle.
+
+1. A share.streamlit.io oldalon: **Create app**, majd **Deploy a public app from GitHub**.
+2. Ugyanaz a tároló és ág, mint eddig. A **Main file path** mezőbe: `nezo.py`.
+3. Az **App URL** mezőben adj neki saját aldomaint, például `cpifm-energia`.
+4. Az **Advanced settings > Secrets** mezőbe csak ennyi kerüljön, **kulcs nélkül**:
+
+   ```toml
+   [github]
+   repo = "a-te-felhasznalod/energiaar-figyelo"
+   branch = "main"
+   ```
+
+5. **Deploy**. Ezt a címet oszd meg; a szerkesztői cím marad neked.
+
+A két alkalmazás ugyanazt a tárolót használja: amit a szerkesztői változatban frissítesz vagy
+rögzítesz, az néhány percen belül megjelenik a nézegethető változatban is. Az élő árakat a
+nézegethető változat magától lekéri, ehhez nem kell gomb.
+
+**Kinek látszik?** A nyilvános telepítést bárki megnyitja, akinek megvan a link. A CEEGEX gázárai
+és a kereskedői ajánlatok viszont nem tehetők közzé, ezért ezt a címet csak a cégen belül add
+tovább. Ha ennél szorosabb védelem kell, telepítsd privát alkalmazásként, és a Streamlit
+beállításaiban sorold fel e-mail címmel, ki nézheti meg.
+
+**Beágyazás weblapba.** Nyilvános telepítésnél a cím végére `?embed=true` írható, és így egy keretbe
+illeszthető a cég oldalán:
+
+```html
+<iframe src="https://cpifm-energia.streamlit.app/?embed=true&embed_options=light_theme"
+        style="width:100%; height:2400px; border:none;" title="Energiaár-figyelő"></iframe>
+```
+
 ## Napi használat
 
 Nyisd meg az alkalmazást, és nézd meg a számokat. Ha közben új ár jelent meg, nyomd meg a **Frissítés** gombot.

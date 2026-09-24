@@ -1,4 +1,4 @@
-# Magyar energiaárak (v13, 2026-09-24)
+# Magyar energiaárak (v14, 2026-09-24)
 
 Webes árpult a magyar másnapi villamos energia (15 perces) és a CEEGEX földgáz árairól, a hazai villamosenergia-termelés forrásonkénti bontásával.
 Az azonnali árakat megnyitáskor és a Frissítés gombra kéri le a forrásokból; adatbázis és háttérfolyamat nincs.
@@ -7,6 +7,9 @@ mert azokat a tőzsdék csak előfizetéssel adják ki gépi lekérésre.
 
 Ha be van állítva GitHub-tároló (hozzáférési kulcs a Streamlit Secrets-ben), a leszedett adatokat
 megőrzi, így az előzmény napról napra gyűlik.
+
+Megosztásra van egy nézegethető változat is (`nezo.py`): ugyanez az alkalmazás szerkesztés,
+feltöltés és mentés nélkül, második telepítésként ugyanabból a tárolóból.
 
 Beüzemelés: lásd [TELEPITES.md](TELEPITES.md).
 

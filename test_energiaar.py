@@ -317,9 +317,10 @@ class HamisGitHub:
 
 
 class Valasz:
-    def __init__(self, kod, adat):
+    def __init__(self, kod, adat=None, szoveg=""):
         self.status_code = kod
         self._adat = adat
+        self.text = szoveg
         self.content = b"x"
 
     def json(self):
@@ -371,6 +372,27 @@ def test_tarolo_halozati_hiba(monkeypatch):
     monkeypatch.setattr(T.requests, "get", hiba)
     with pytest.raises(T.TarolasHiba, match="nem érhető el"):
         T.Tarolo({"token": "abc", "repo": "en/t"}).olvas("x.csv")
+
+
+def test_tarolo_kulcs_nelkul_csak_olvas(monkeypatch):
+    """A nézegethető változat kulcs nélkül olvas a nyilvános tárolóból, írni nem tud."""
+    hivott = {}
+
+    def nyers(url, timeout=None):
+        hivott["cim"] = url
+        return Valasz(200, szoveg="nap,ar\n2026-09-11,80\n")
+
+    monkeypatch.setattr(T.requests, "get", nyers)
+    t = T.Tarolo({"repo": "en/tarolom", "branch": "main"})
+    assert t.olvashat and not t.mukodik
+    assert t.olvas("data/napi.csv") == "nap,ar\n2026-09-11,80\n"
+    assert hivott["cim"] == "https://raw.githubusercontent.com/en/tarolom/main/data/napi.csv"
+    assert t.ir("data/napi.csv", "barmi\n", "próba") is False  # írni kulcs nélkül nem lehet
+
+
+def test_tarolo_kulcs_nelkul_hianyzo_fajl(monkeypatch):
+    monkeypatch.setattr(T.requests, "get", lambda *a, **k: Valasz(404))
+    assert T.Tarolo({"repo": "en/tarolom"}).olvas("data/nincs.csv") is None
 
 
 def test_tabla_oda_vissza():
