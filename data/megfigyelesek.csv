@@ -252,10 +252,11 @@ idopont,tema,kulcs,ertek,szoveg
 2026-09-27 07:44,jegyzes,2026-09-24,9.0,9 határidős jegyzés érkezett a 2026-09-24 napra
 2026-09-27 07:44,jegyzes,2026-09-25,9.0,9 határidős jegyzés érkezett a 2026-09-25 napra
 2026-09-27 07:44,mutato,aram_30nap|2026-09-27,186.46,"Villamos zsinórár, 30 napos átlag"
-2026-09-27 07:44,mutato,deli_sav|2026-09-27,-0.4962,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-09-27 07:44,mutato,negativ_arany|2026-09-27,0.0237,Nulla vagy negatív árú negyedórák aránya
 2026-09-27 07:44,mutato,fwd_jovo_ev|2026-09-27,152.5,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-09-27 07:44,mutato,gorbe_irany|2026-09-27,-0.2246,Második év ára az elsőhöz képest
 2026-09-27 07:44,mutato,gaz_30nap|2026-09-27,73.85,"Gáz másnapi ár, havi átlag"
-2026-09-27 07:44,mutato,nap_arany|2026-09-27,28.28,A napenergia részaránya a fogyasztásból
 2026-09-27 07:44,mutato,aram_gaz_arany|2026-09-27,2.52,Áram és gáz árának aránya
+2026-09-27 15:56,holnapi_ar,2026-09-28,161.19,"Megérkezett a 2026-09-28 napi áramár: zsinór 161,19 EUR/MWh"
+2026-09-27 15:56,mutato,deli_sav|2026-09-27,-0.4962,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-09-27 15:56,mutato,negativ_arany|2026-09-27,0.0237,Nulla vagy negatív árú negyedórák aránya
+2026-09-27 15:56,mutato,gorbe_irany|2026-09-27,-0.2246,Második év ára az elsőhöz képest
+2026-09-27 15:56,mutato,nap_arany|2026-09-27,29.26,A napenergia részaránya a fogyasztásból
