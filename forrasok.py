@@ -6,6 +6,7 @@ A lekérő függvények hálózatot használnak, a feldolgozók (feldolgoz_*) ti
 from __future__ import annotations
 
 import re
+import time
 from datetime import date, datetime, timedelta
 from html.parser import HTMLParser
 
@@ -28,6 +29,29 @@ class ForrasHiba(Exception):
 
 # ---------------------------------------------------------------- Villamos energia
 
+# A forrás időnként rövid időre kiesik (503). Ilyenkor nem adjuk fel az első próbálkozásra.
+UJRAPROBA = 3
+VARAKOZAS = (1.5, 4.0)
+
+
+def keres(cim: str, parameterek: dict | None = None, nev: str = "A forrás") -> requests.Response:
+    """Lekérés újrapróbálkozással. Az átmeneti kiesést (5xx) és a hálózati hibát újrapróbálja."""
+    utolso = ""
+    for proba in range(UJRAPROBA):
+        try:
+            valasz = requests.get(cim, params=parameterek, headers=B.HTTP_FEJLEC,
+                                  timeout=B.HTTP_IDOKORLAT)
+        except requests.RequestException as e:
+            utolso = f"{nev} nem érhető el: {e}"
+        else:
+            if valasz.status_code < 500:
+                return valasz
+            utolso = f"{nev}: a kiszolgáló most nem elérhető (HTTP {valasz.status_code})"
+        if proba < UJRAPROBA - 1:
+            time.sleep(VARAKOZAS[min(proba, len(VARAKOZAS) - 1)])
+    raise ForrasHiba(utolso)
+
+
 def leker_villamos(kezdet: date, veg: date, szakasz_nap: int = 60) -> pd.DataFrame:
     """Magyar másnapi árak az Energy-Charts API-ból, a kért napokra (a vég napját is beleértve)."""
     reszek = []
@@ -39,11 +63,7 @@ def leker_villamos(kezdet: date, veg: date, szakasz_nap: int = 60) -> pd.DataFra
             "start": aktualis.isoformat(),
             "end": (szakasz_vege + timedelta(days=1)).isoformat(),
         }
-        try:
-            valasz = requests.get(B.ENERGY_CHARTS_URL, params=parameterek,
-                                  headers=B.HTTP_FEJLEC, timeout=B.HTTP_IDOKORLAT)
-        except requests.RequestException as e:
-            raise ForrasHiba(f"Energy-Charts nem érhető el: {e}") from e
+        valasz = keres(B.ENERGY_CHARTS_URL, parameterek, "Energy-Charts")
         if valasz.status_code == 404:
             aktualis = szakasz_vege + timedelta(days=1)
             continue  # erre az időszakra még nincs publikált ár
@@ -85,10 +105,7 @@ def feldolgoz_villamos(adat: dict) -> pd.DataFrame:
 # ---------------------------------------------------------------- Földgáz, CEEGEX
 
 def leker_html(url: str) -> str:
-    try:
-        valasz = requests.get(url, headers=B.HTTP_FEJLEC, timeout=B.HTTP_IDOKORLAT)
-    except requests.RequestException as e:
-        raise ForrasHiba(f"CEEGEX nem érhető el: {e}") from e
+    valasz = keres(url, None, "CEEGEX")
     if valasz.status_code != 200:
         raise ForrasHiba(f"CEEGEX HTTP {valasz.status_code} ({url})")
     valasz.encoding = valasz.encoding or "utf-8"
@@ -327,11 +344,8 @@ KAPACITAS_OSZLOPOK = ["ev", "csoport", "mw"]
 
 def leker_kapacitas() -> pd.DataFrame:
     """Beépített erőművi teljesítmény forrásonként, évenként (Energy-Charts, ENTSO-E alapon)."""
-    try:
-        valasz = requests.get(B.KAPACITAS_URL, params={"country": "hu", "time_step": "yearly"},
-                              headers=B.HTTP_FEJLEC, timeout=B.HTTP_IDOKORLAT)
-    except requests.RequestException as e:
-        raise ForrasHiba(f"A beépített teljesítmény nem érhető el: {e}") from e
+    valasz = keres(B.KAPACITAS_URL, {"country": "hu", "time_step": "yearly"},
+                   "Energy-Charts (beépített teljesítmény)")
     if valasz.status_code != 200:
         raise ForrasHiba(f"Energy-Charts HTTP {valasz.status_code} (beépített teljesítmény)")
     return feldolgoz_kapacitas(valasz.json())
@@ -367,11 +381,7 @@ def leker_termeles(kezdet: date, veg: date, szakasz_nap: int = 30) -> pd.DataFra
     while aktualis <= veg:
         szakasz_vege = min(aktualis + timedelta(days=szakasz_nap - 1), veg)
         parameterek = {"country": "hu", "start": aktualis.isoformat(), "end": szakasz_vege.isoformat()}
-        try:
-            valasz = requests.get(B.TERMELES_URL, params=parameterek, headers=B.HTTP_FEJLEC,
-                                  timeout=B.HTTP_IDOKORLAT)
-        except requests.RequestException as e:
-            raise ForrasHiba(f"A termelési adat nem érhető el: {e}") from e
+        valasz = keres(B.TERMELES_URL, parameterek, "Energy-Charts (termelés)")
         if valasz.status_code == 404:
             aktualis = szakasz_vege + timedelta(days=1)
             continue

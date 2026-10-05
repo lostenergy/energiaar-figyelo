@@ -420,7 +420,7 @@ def betolt(ma: date, mentett: dict) -> dict:
             except Exception as e:
                 ki["hibak"].append(f"Villamos előzmény: {e}")
     except Exception as e:
-        ki["hibak"].append(f"Energy-Charts: {e}")
+        ki["hibak"].append(f"Villamos árak: {e}")
     ki["villamos"] = villamos if not villamos.empty else F.ures(F.VILLAMOS_OSZLOPOK)
 
     szamolt_napi = S.napi_osszesites(ki["villamos"])
@@ -467,6 +467,11 @@ def betolt(ma: date, mentett: dict) -> dict:
     return ki
 
 
+# Ezeknél a fájloknál az előzmény csak gyarapodhat: ha az új tábla rövidebb lenne a tároltnál,
+# az azt jelenti, hogy valami hiányosan töltődött be, és nem szabad felülírni a jót.
+NEM_ROVIDULHET = {"napi", "termeles_napi", "naplo", "gaz", "gaz_wd"}
+
+
 def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
     """A megváltozott táblák visszaírása a GitHub-tárolóba. Visszaadja a mentett fájlok nevét.
 
@@ -475,6 +480,11 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
     """
     t = tarolo()
     if NEZO or not t.mukodik:
+        return []
+    if mentett.get("_hibak"):
+        # Ha a tárolót most nem sikerült beolvasni, hiányos adatból nem írunk vissza semmit.
+        st.session_state["mentesi_gondok"] = [
+            "A tároló olvasása nem sikerült, ezért most nem mentettünk, nehogy adat vesszen el."]
         return []
     utoljara = st.session_state.setdefault("utoljara_mentve", {})
     ma_szoveg = pd.Timestamp.now(tz=B.IDOZONA).strftime("%Y-%m-%d %H:%M")
@@ -495,6 +505,10 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
             continue
         if len(szoveg.encode("utf-8")) > MERET_HATAR:
             gondok.append(f"{TAROLT[kulcs]}: túl nagy a mentéshez")
+            continue
+        if kulcs in NEM_ROVIDULHET and T.sorok_szama(szoveg) < T.sorok_szama(mentett.get(kulcs)):
+            gondok.append(f"{TAROLT[kulcs]}: kihagyva, mert kevesebb sort írt volna, mint ami a "
+                          "tárolóban van")
             continue
         try:
             t.ir(TAROLT[kulcs], szoveg, f"Adatfrissítés {ma_szoveg}")
@@ -633,18 +647,24 @@ most_ar = float(most_sor.iloc[0]["ar"]) if not most_sor.empty else None
 zs_ma, zs_holnap = napi_ertek(ma, "zsinor"), napi_ertek(holnap, "zsinor")
 gaz_elozo = S.gaz_kulcsszamok(gaz)["da_elozo"]
 
+# Ha a villamos forrás most nem válaszol, azt írjuk ki, és nem azt, hogy még nincs ár
+villamos_kiesett = any(h.startswith(("Villamos árak", "Energy-Charts")) for h in hibak)
+hianyzo = "nem elérhető" if villamos_kiesett else "nincs még"
+forras_megj = "a forrás most nem válaszol" if villamos_kiesett else ""
+
 szamok = [
-    ("Most", most_ar, f"{most.floor('15min').strftime('%H:%M')} és "
+    ("Most", most_ar, forras_megj or f"{most.floor('15min').strftime('%H:%M')} és "
                       f"{(most.floor('15min') + pd.Timedelta(minutes=15)).strftime('%H:%M')} között"),
-    ("Ma átlagosan", zs_ma, "zsinór, egész napra"),
+    ("Ma átlagosan", zs_ma, forras_megj if zs_ma is None and villamos_kiesett else "zsinór, egész napra"),
     ("Holnap átlagosan", zs_holnap,
-     f"a mához képest {hos_valtozas(S.valtozas(zs_holnap, zs_ma))}" if zs_holnap else "13 óra körül érkezik"),
+     f"a mához képest {hos_valtozas(S.valtozas(zs_holnap, zs_ma))}" if zs_holnap
+     else (forras_megj or "13 óra körül érkezik")),
     ("Gáz, másnapi", gk_most["mai"],
      f"előző naphoz {hos_valtozas(S.valtozas(gk_most['mai'], gaz_elozo['atlagar'] if gaz_elozo else None))}"),
 ]
 szam_html = "".join(
     f'<div class="hos-szam"><div class="cimke">{c}</div>'
-    f'<div class="ertek">{hu(e, 1, ha_nincs="nincs még")}<small>{"EUR/MWh" if e is not None else ""}</small></div>'
+    f'<div class="ertek">{hu(e, 1, ha_nincs=hianyzo)}<small>{"EUR/MWh" if e is not None else ""}</small></div>'
     f'<div class="also">{"<b>" + ft(e) + " Ft/kWh</b> · " if e is not None else ""}{a}</div></div>'
     for c, e, a in szamok)
 
@@ -1356,8 +1376,13 @@ with lap_kitekinto:
                 'szabályozás, készletek). A címre kattintva megnyílik az eredeti cikk.</p>',
                 unsafe_allow_html=True)
 
-    with st.spinner("Hírek lekérése..."):
-        hirgyujtes = hirek_adat()
+    try:
+        with st.spinner("Hírek lekérése..."):
+            hirgyujtes = hirek_adat()
+    except Exception as e:
+        # Egyetlen fül hibája ne vigye el az egész oldalt.
+        hirgyujtes = {"hirek": pd.DataFrame(columns=HI.OSZLOPOK), "forrasok": 0,
+                      "hibak": [f"A hírek lekérése nem sikerült: {e}"]}
     hirek = hirgyujtes["hirek"]
 
     if "kitekinto" not in st.session_state:
@@ -1365,8 +1390,11 @@ with lap_kitekinto:
 
     for kulcs, nev in HI.TERULETEK:
         resz = HI.terulet_hirei(hirek, kulcs)
-        adat_o = O.valaszt(O.olvas(st.session_state.kitekinto, kulcs), resz,
-                           HI.TERULET_JELZO[kulcs], ma)
+        try:
+            adat_o = O.valaszt(O.olvas(st.session_state.kitekinto, kulcs), resz,
+                               HI.TERULET_JELZO[kulcs], ma)
+        except Exception:
+            adat_o = {"szoveg": "", "mod": "auto", "frissitve": "", "regi_irt": ""}
         alcim(nev, f"{len(resz)} hír az elmúlt {B.HIREK_NAP} napból")
         bal, jobb = st.columns([2, 3], gap="medium")
         with bal:

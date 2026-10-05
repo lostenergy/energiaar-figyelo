@@ -123,5 +123,12 @@ def szoveg_tablava(szoveg: str | None, oszlopok: list[str]) -> pd.DataFrame:
     return tabla[oszlopok]
 
 
+def sorok_szama(szoveg: str | None) -> int:
+    """Hány adatsor van egy mentett táblában (a fejléc nélkül)."""
+    if not szoveg:
+        return 0
+    return max(0, len([sor for sor in szoveg.splitlines() if sor.strip()]) - 1)
+
+
 def valtozott(regi_szoveg: str | None, uj_szoveg: str) -> bool:
     return (regi_szoveg or "") != uj_szoveg

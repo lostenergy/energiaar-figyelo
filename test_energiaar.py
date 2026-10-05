@@ -168,6 +168,12 @@ def test_leker_villamos_hianyzo_idoszak(monkeypatch):
     assert not t.empty and t["nap"].max() < "2026-09-01"
 
 
+@pytest.fixture(autouse=True)
+def gyors_ujraproba(monkeypatch):
+    """A tesztekben ne várjon az újrapróbálkozások között."""
+    monkeypatch.setattr(F.time, "sleep", lambda mp: None)
+
+
 def test_leker_villamos_hibas_valasz(monkeypatch):
     class Valasz:
         status_code = 500
@@ -698,3 +704,57 @@ def test_tobb_level_utan_gorbe_es_idosor():
     gorbe = H.gorbe(jegyzesek, "Villamos")  # alapból a legfrissebb jegyzési nap
     assert set(gorbe["jegyzes_nap"]) == {"2026-09-15"}
     assert len(gorbe) == 9 and gorbe["szallitas_kezdete"].is_monotonic_increasing
+
+
+def test_keres_ujraprobal_atmeneti_kiesesnel(monkeypatch):
+    """Az 503 átmeneti, ezért újra kell próbálni, mielőtt hibát jelentünk."""
+    hivasok = []
+
+    def get(cim, params=None, headers=None, timeout=None):
+        hivasok.append(cim)
+        return Valasz(503 if len(hivasok) < 3 else 200, {"rendben": True})
+
+    monkeypatch.setattr(F.requests, "get", get)
+    monkeypatch.setattr(F.time, "sleep", lambda mp: None)
+    valasz = F.keres("http://proba", {"a": 1}, "Próba")
+    assert valasz.status_code == 200 and len(hivasok) == 3
+
+
+def test_keres_feladja_tartos_kieseskor(monkeypatch):
+    monkeypatch.setattr(F.requests, "get", lambda *a, **k: Valasz(503, {}))
+    monkeypatch.setattr(F.time, "sleep", lambda mp: None)
+    with pytest.raises(F.ForrasHiba, match="nem elérhető"):
+        F.keres("http://proba", None, "Próba")
+
+
+def test_keres_halozati_hibat_is_ujraprobal(monkeypatch):
+    hivasok = []
+
+    def get(cim, params=None, headers=None, timeout=None):
+        hivasok.append(cim)
+        if len(hivasok) < 2:
+            raise F.requests.ConnectionError("megszakadt")
+        return Valasz(200, {})
+
+    monkeypatch.setattr(F.requests, "get", get)
+    monkeypatch.setattr(F.time, "sleep", lambda mp: None)
+    assert F.keres("http://proba").status_code == 200 and len(hivasok) == 2
+
+
+def test_keres_nem_probalja_ujra_a_404_et(monkeypatch):
+    hivasok = []
+
+    def get(cim, params=None, headers=None, timeout=None):
+        hivasok.append(cim)
+        return Valasz(404, {})
+
+    monkeypatch.setattr(F.requests, "get", get)
+    assert F.keres("http://proba").status_code == 404 and len(hivasok) == 1
+
+
+def test_sorok_szama_vedi_az_elozmenyt():
+    hosszu = "nap,ar\n" + "\n".join(f"2026-01-{n:02d},80" for n in range(1, 21))
+    rovid = "nap,ar\n2026-01-01,80\n"
+    assert T.sorok_szama(hosszu) == 20 and T.sorok_szama(rovid) == 1
+    assert T.sorok_szama("") == 0 and T.sorok_szama(None) == 0
+    assert T.sorok_szama(rovid) < T.sorok_szama(hosszu)  # ezt a rövidebbet nem szabad kiírni

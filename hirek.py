@@ -181,6 +181,13 @@ def osszegyujt(forrasok: list[Forras] | None = None, napok: int = 10,
     if tabla.empty:
         return {"hirek": tabla, "hibak": hibak, "forrasok": sikeres}
 
+    # A csatornák eltérő időzónában adják meg az időpontot (nálunk +0200, az angoloknál GMT),
+    # ezért közös időzónára hozzuk, különben nem lehet velük számolni.
+    tabla["ido"] = pd.to_datetime(tabla["ido"], utc=True, errors="coerce")
+    tabla["pont"] = pd.to_numeric(tabla["pont"], errors="coerce").fillna(0)
+    most = pd.Timestamp(most).tz_convert("UTC") if pd.Timestamp(most).tzinfo \
+        else pd.Timestamp(most).tz_localize("UTC")
+
     hatar = most - timedelta(days=napok)
     tabla = tabla[tabla["ido"].notna() & (tabla["ido"] >= hatar) & (tabla["ido"] <= most + timedelta(hours=6))]
     tabla = tabla.drop_duplicates("link").copy()

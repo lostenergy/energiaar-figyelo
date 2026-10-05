@@ -242,3 +242,21 @@ def test_valaszt_elavult_irottat_lecsereli():
 def test_valaszt_ures_tarolonal_magatol_keszit():
     ki = O.valaszt({}, hirtabla([("Drágul a gáz", "A", 1, 0)]), "európai", MOST.date())
     assert ki["mod"] == "auto" and ki["szoveg"] and ki["regi_irt"] == ""
+
+
+def test_osszegyujt_elteroe_idozonakkal_is_mukodik(monkeypatch):
+    """A magyar csatornák +0200-t, az angolok GMT-t adnak; ettől nem állhat meg a gyűjtés."""
+    magyar = HI.Forras("M", "http://m", "magyar")
+    vilag = HI.Forras("V", "http://v", "vilag", szures=False)
+    valaszok = {
+        "M": rss([("Emelkedik az áram ára", "", "http://m/1", "Sun, 04 Oct 2026 10:00:00 +0200"),
+                  ("Drágul a gáz", "", "http://m/2", "Sun, 04 Oct 2026 09:00:00 +0000")]),
+        "V": rss([("Oil prices surge", "", "http://v/1", "Sun, 04 Oct 2026 08:00:00 GMT"),
+                  ("Gas storage falls", "", "http://v/2", "Sat, 03 Oct 2026 23:30:00 -0400")]),
+    }
+    monkeypatch.setattr(HI, "leker_csatorna", hamis_leker(valaszok))
+    ki = HI.osszegyujt([magyar, vilag], most=MOST)
+    t = ki["hirek"]
+    assert len(t) == 4 and ki["hibak"] == []
+    assert str(t["ido"].dtype).startswith("datetime64")  # közös időzóna, számolható érték
+    assert len(HI.terulet_hirei(t, "magyar")) == 2 and len(HI.terulet_hirei(t, "vilag")) == 2
