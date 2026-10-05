@@ -325,5 +325,5 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-05 12:26,mutato,nap_arany|2026-10-05,26.44,A napenergia részaránya a fogyasztásból
 2026-10-05 12:26,mutato,aram_gaz_arany|2026-10-05,2.46,Áram és gáz árának aránya
 2026-10-05 13:06,holnapi_ar_hianyzik,2026-10-06|13,,13:06-kor még nem volt elérhető a holnapi áramár
-2026-10-05 13:57,mutato,deli_sav|2026-10-05,-0.5662,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-10-05 13:57,mutato,gorbe_irany|2026-10-05,-0.2246,Második év ára az elsőhöz képest
+2026-10-05 13:58,mutato,deli_sav|2026-10-05,-0.5662,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-10-05 13:58,mutato,gorbe_irany|2026-10-05,-0.2246,Második év ára az elsőhöz képest
