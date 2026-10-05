@@ -124,7 +124,7 @@ tud írni a tárolóba, csak olvasni belőle.
 
 1. A share.streamlit.io oldalon: **Create app**, majd **Deploy a public app from GitHub**.
 2. Ugyanaz a tároló és ág, mint eddig. A **Main file path** mezőbe: `nezo.py`.
-3. Az **App URL** mezőben adj neki saját aldomaint, például `cpifm-energia`.
+3. Az **App URL** mezőben adj neki saját aldomaint, például `open-energia`.
 4. Az **Advanced settings > Secrets** mezőbe csak ennyi kerüljön, **kulcs nélkül**:
 
    ```toml
@@ -148,9 +148,62 @@ beállításaiban sorold fel e-mail címmel, ki nézheti meg.
 illeszthető a cég oldalán:
 
 ```html
-<iframe src="https://cpifm-energia.streamlit.app/?embed=true&embed_options=light_theme"
+<iframe src="https://open-energia.streamlit.app/?embed=true&embed_options=light_theme"
         style="width:100%; height:2400px; border:none;" title="Energiaár-figyelő"></iframe>
 ```
+
+## Saját weboldal
+
+A tárolóban van egy kész weboldal is, a `docs` mappában: nyilvános nyitólap (`index.html`), és egy
+belépés mögé szánt lap (`adatok/index.html`), amelyben keretben fut az alkalmazás. Az alkalmazás
+címét egy helyen kell megadni: `docs/adatok/beallitas.js`.
+
+Két úton tehető közzé:
+
+- **Saját doménen, jelszavas belépéssel.** Cloudflare Pages a tárhely (ingyenes), Cloudflare Access
+  a belépés (ingyenes ötven főig), a domén az egyetlen költség. A nyitólap nyilvános marad, csak az
+  `adatok` mappa kerül belépés mögé. A lépések a [HONLAP.md](HONLAP.md) fájlban vannak.
+- **Gyorsan, jelszó nélkül.** A tárolóban **Settings > Pages**, a **Source** legyen
+  **Deploy from a branch**, a **Branch** pedig `main` és `/docs`. Egy-két perc múlva ott a cím.
+  Jelszavas védelem ezen az úton nincs.
+
+Mindkét esetben igaz, hogy a beágyazott alkalmazás a saját címén elérhető marad; erről a
+HONLAP.md végén van szó.
+
+## Kitekintő fül
+
+Ez a fül azt mutatja meg, mi mozgatja éppen az árakat, három körben: Magyarország, Európa és a
+világ. A hírek nyilvános hírcsatornákból (RSS) érkeznek, félóránként frissülnek, és csak a címük
+és a hivatkozásuk jelenik meg, a cikkek a forrásaiké maradnak.
+
+A magyar gazdasági hírfolyamokból csak az energiával kapcsolatos hírek kerülnek be; a szakmai
+csatornákból minden. A sorrendet az szabja meg, hogy a hírben hány árat mozgató elem szerepel
+(időjárás, leállás, szankció, szabályozás, készletek), és hogy mennyire friss.
+
+**Az összegzés** területenként 3-6 mondat arról, mit jelentenek ezek a hírek. Ez magától
+készül el, beállítás és költség nélkül: megmondja, hány hír kapcsolódik az árakhoz, milyen témák
+köré rendeződnek (időjárás, készletek, leállások, geopolitika, szabályozás és a többi), melyik a
+két leginkább árérzékeny hír, és hogy a címek szóhasználata inkább emelkedő vagy inkább
+mérséklődő árak felé mutat. A hírekkel együtt frissül, tehát nincs vele teendő.
+
+Ha ennél bővebb szöveget szeretnél, a fül alján az **Összegzés írása vagy frissítése** panelen
+saját szöveget is írhatsz. A saját szöveg egy hétig elsőbbséget élvez, utána visszaáll az
+önműködő változat, hogy ne maradjon kint elavult összegzés. Itt a hírcímek listája is kimásolható.
+
+Ha a beállításokba (Secrets) bekerül egy nyelvi modell kulcsa, megjelenik az **Összegzés
+készítése a mai hírekből** gomb, ami összefüggő elemzést ír a címekből. A beállítás formája:
+
+```toml
+[ai]
+kulcs = "sk-ant-..."
+```
+
+A kulcs a console.anthropic.com oldalon állítható ki, és fogyasztás szerint fizetős; egy összegzés
+néhány forint, mert csak a hírcímeket küldi el. Ez tehát nem szükséges, csak lehetőség.
+
+A kézzel írt vagy modellel készített összegzés a `data/kitekinto.csv` fájlba kerül, tehát a
+nézegethető változatban és a weboldalon is ugyanaz látszik. Az önműködő összegzéshez nem kell
+tároló, az mindenhol magától elkészül.
 
 ## Napi használat
 

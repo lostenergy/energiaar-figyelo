@@ -22,8 +22,10 @@ import beolvasas as BE
 import elemzes as E
 import forrasok as F
 import hataridos as H
+import hirek as HI
 import lehetosegek as L
 import megfigyeles as M
+import osszegzes as O
 import szamitas as S
 import tarolas as T
 import termeles as TE
@@ -134,6 +136,14 @@ div[data-testid="stVerticalBlock"] {{ gap: 0.55rem; }}
 .ear-lista li {{ padding-left: 1rem; position: relative; font-size: 0.88rem; margin: 0.15rem 0; color: {SZ['tinta']};
                 font-variant-numeric: tabular-nums; }}
 .ear-lista li::before {{ content: "■"; color: {SZ['sargarez']}; position: absolute; left: 0; font-size: 0.6rem; top: 0.3rem; }}
+table.ear-hirek {{ width: 100%; border-collapse: collapse; }}
+table.ear-hirek td {{ border: none !important; border-bottom: 1px solid {SZ['vonal']} !important;
+                      padding: 0.42rem 0.2rem; vertical-align: top; font-size: 0.9rem; }}
+table.ear-hirek tr:last-child td {{ border-bottom: none !important; }}
+table.ear-hirek td.ido {{ color: {SZ['acel']}; white-space: nowrap; width: 5.2rem; font-size: 0.8rem; }}
+table.ear-hirek a {{ color: {SZ['tinta']}; text-decoration: none; }}
+table.ear-hirek a:hover {{ color: {SZ['sargarez']}; text-decoration: underline; }}
+table.ear-hirek .forras {{ color: {SZ['acel']}; font-size: 0.78rem; }}
 .ear-tanulsag {{ background: {SZ['kod']}; border-left: 3px solid {SZ['sargarez']}; border-radius: 0 8px 8px 0;
                 padding: 0.7rem 0.9rem; margin: 0.4rem 0 0.8rem 0; }}
 .ear-tanulsag p {{ margin: 0.15rem 0; font-size: 0.92rem; color: {SZ['tinta']}; line-height: 1.45; }}
@@ -318,7 +328,8 @@ def mutat(fig: go.Figure) -> None:
 TAROLT = {"napi": "data/villamos_napi.csv", "negyedora": "data/villamos_15perc.csv",
           "gaz": "data/gaz_masnapi.csv", "gaz_wd": "data/gaz_napon_belul.csv",
           "hataridos": "hataridos.csv", "naplo": "data/megfigyelesek.csv",
-          "termeles_napi": "data/termeles_napi.csv"}
+          "termeles_napi": "data/termeles_napi.csv",
+          "kitekinto": "data/kitekinto.csv"}
 NEGYEDORA_MEGORZES = 70  # ennyi napnyi negyedórás árat őrzünk meg részletesen
 MERET_HATAR = 900_000     # a GitHub felülete egy megabájt fölött már nem kezeli jól a fájlokat
 
@@ -366,6 +377,11 @@ def termeles_friss(ma: date) -> pd.DataFrame:
 @st.cache_data(ttl=B.ELOZMENY_ELTARTHATOSAG, show_spinner=False)
 def termeles_elozmeny(vegnap: date, napok: int) -> pd.DataFrame:
     return F.leker_termeles(vegnap - timedelta(days=napok), vegnap)
+
+
+@st.cache_data(ttl=B.HIREK_ELTARTHATOSAG, show_spinner=False)
+def hirek_adat() -> dict:
+    return HI.osszegyujt(napok=B.HIREK_NAP, darab=B.HIREK_DARAB)
 
 
 @st.cache_data(ttl=B.KAPACITAS_ELTARTHATOSAG, show_spinner=False)
@@ -495,6 +511,7 @@ def mindent_ujra() -> None:
     villamos_friss.clear()
     termeles_friss.clear()
     kapacitas_adat.clear()
+    hirek_adat.clear()
     gaz_adatok.clear()
     tarolt_adatok.clear()
 
@@ -670,8 +687,10 @@ szam_hely.markdown(f'<div class="hos-szamok">{szam_html}</div>{csik_html}{hullam
 if hibak:
     st.warning("Nem minden lépés sikerült:\n\n" + "\n\n".join(hibak))
 
-lap_villamos, lap_gaz, lap_termeles, lap_lehetoseg, lap_hataridos, lap_elozmeny = st.tabs(
-    ["Villamos energia", "Földgáz", "Termelés", "Lehetőségek", "Határidős árak", "Előzmények"])
+(lap_villamos, lap_gaz, lap_termeles, lap_kitekinto, lap_lehetoseg, lap_hataridos,
+ lap_elozmeny) = st.tabs(
+    ["Villamos energia", "Földgáz", "Termelés", "Kitekintő", "Lehetőségek", "Határidős árak",
+     "Előzmények"])
 
 
 # ------------------------------------------------------------------ villamos
@@ -1294,6 +1313,154 @@ with lap_termeles:
         st.markdown('<p class="ear-megj">Forrás: Energy-Charts (Fraunhofer ISE, CC BY 4.0), az adatok eredete '
                     'az ENTSO-E átláthatósági platform. Az értékek MW teljesítményt, a napi táblázat MWh '
                     'energiát mutat.</p>', unsafe_allow_html=True)
+
+
+# ------------------------------------------------------------------ kitekintő
+
+def ai_kulcs() -> str:
+    """A nyelvi modell kulcsa a beállításokból, ha van. Enélkül az összegzést kézzel írjuk."""
+    try:
+        return str(st.secrets.get("ai", {}).get("kulcs") or "").strip()
+    except Exception:
+        return ""
+
+
+def hir_ideje(ido) -> str:
+    """Rövid, magyar időjelölés a hírlistához."""
+    if pd.isna(ido):
+        return ""
+    helyi = pd.Timestamp(ido).tz_convert(B.IDOZONA)
+    nap = helyi.date()
+    if nap == ma:
+        return f"ma {helyi.strftime('%H:%M')}"
+    if nap == ma - timedelta(days=1):
+        return "tegnap"
+    return f"{helyi.month:02d}. {helyi.day:02d}."
+
+
+def hirek_tablaja(resz: pd.DataFrame) -> str:
+    sorok = []
+    for h in resz.itertuples():
+        cim = escape(str(h.cim))
+        link = escape(str(h.link), quote=True)
+        sorok.append(f'<tr><td class="ido">{hir_ideje(h.ido)}</td>'
+                     f'<td><a href="{link}" target="_blank" rel="noopener">{cim}</a><br>'
+                     f'<span class="forras">{escape(str(h.forras))}</span></td></tr>')
+    return f'<table class="ear-hirek">{"".join(sorok)}</table>'
+
+
+with lap_kitekinto:
+    st.markdown('<p class="ear-vezeto">Ami a magyar energiaárakra hat, három körben: itthon, '
+                'Európában és a világban. A hírek nyilvános hírcsatornákból érkeznek, és az '
+                'kerül előre, ami jellemzően mozgatja az árakat (időjárás, leállás, szankció, '
+                'szabályozás, készletek). A címre kattintva megnyílik az eredeti cikk.</p>',
+                unsafe_allow_html=True)
+
+    with st.spinner("Hírek lekérése..."):
+        hirgyujtes = hirek_adat()
+    hirek = hirgyujtes["hirek"]
+
+    if "kitekinto" not in st.session_state:
+        st.session_state.kitekinto = T.szoveg_tablava(mentett.get("kitekinto"), O.OSZLOPOK)
+
+    for kulcs, nev in HI.TERULETEK:
+        resz = HI.terulet_hirei(hirek, kulcs)
+        adat_o = O.valaszt(O.olvas(st.session_state.kitekinto, kulcs), resz,
+                           HI.TERULET_JELZO[kulcs], ma)
+        alcim(nev, f"{len(resz)} hír az elmúlt {B.HIREK_NAP} napból")
+        bal, jobb = st.columns([2, 3], gap="medium")
+        with bal:
+            if adat_o["szoveg"]:
+                bekezdesek = "".join(f"<p>{escape(r.strip())}</p>"
+                                     for r in adat_o["szoveg"].split("\n") if r.strip())
+                st.markdown(f'<div class="ear-tanulsag">{bekezdesek}</div>', unsafe_allow_html=True)
+                if adat_o["mod"] == "auto":
+                    labjegyzet = "Magától készült a hírcímekből, és a hírekkel együtt frissül."
+                    if adat_o["regi_irt"]:
+                        labjegyzet += (f" A kézzel írt összegzés ({adat_o['regi_irt']}) "
+                                       "már nem időszerű.")
+                else:
+                    labjegyzet = (f"Összegzés frissítve: {adat_o['frissitve']} "
+                                  f"({O.MODOK.get(adat_o['mod'], adat_o['mod'])}).")
+                st.markdown(f'<p class="ear-megj">{labjegyzet}</p>', unsafe_allow_html=True)
+            else:
+                st.markdown('<p class="ear-megj">Most nincs mit összegezni ezen a területen.</p>',
+                            unsafe_allow_html=True)
+        with jobb:
+            if resz.empty:
+                st.markdown('<p class="ear-megj">Most nem érkezett hír ehhez a területhez.</p>',
+                            unsafe_allow_html=True)
+            else:
+                st.markdown(hirek_tablaja(resz), unsafe_allow_html=True)
+
+    if not NEZO:
+        with st.expander("Összegzés írása vagy frissítése"):
+            kulcs_ai = ai_kulcs()
+            if kulcs_ai:
+                st.markdown('<p class="ear-megj">A gomb a fenti hírcímekből készít összegzést '
+                            'mindhárom területre. Átírható, mielőtt mented.</p>',
+                            unsafe_allow_html=True)
+                if st.button("Összegzés készítése a mai hírekből", type="primary",
+                             key="kitekinto_keszit"):
+                    try:
+                        with st.spinner("Összegzés készül..."):
+                            keszult = O.keszit(
+                                {t: HI.hirek_szovegge(hirek, t, B.HIREK_DARAB)
+                                 for t, _ in HI.TERULETEK}, kulcs_ai)
+                        for t, _ in HI.TERULETEK:
+                            if keszult.get(t):
+                                st.session_state[f"kitekinto_{t}"] = keszult[t]
+                        st.session_state["kitekinto_mod"] = "gep"
+                        st.success("Elkészült. Nézd át, majd nyomj Mentést.")
+                    except (RuntimeError, ValueError) as e:
+                        st.error(str(e))
+            else:
+                st.markdown('<p class="ear-megj">A fenti összegzések maguktól készülnek a '
+                            'hírcímekből, tehát nincs vele teendőd. Itt akkor érdemes saját '
+                            'szöveget írni, ha valamit hozzá akarsz tenni; a sajátod egy hétig '
+                            'elsőbbséget élvez, utána visszaáll az önműködő változat. Ha a '
+                            'beállításokba bekerül egy nyelvi modell kulcsa <code>[ai] kulcs</code> '
+                            'néven, egy gombnyomásra bővebb összegzés is készíthető.</p>',
+                            unsafe_allow_html=True)
+                cimlista = "\n\n".join(
+                    f"{nev.upper()}:\n" + (HI.hirek_szovegge(hirek, t, B.HIREK_DARAB) or "(nincs hír)")
+                    for t, nev in HI.TERULETEK)
+                with st.popover("Hírcímek kimásolása"):
+                    st.code(cimlista, language=None)
+
+            szovegek = {}
+            for t, nev in HI.TERULETEK:
+                alap = st.session_state.get(f"kitekinto_{t}",
+                                            O.olvas(st.session_state.kitekinto, t)["szoveg"]
+                                            or O.magatol(HI.terulet_hirei(hirek, t), HI.TERULET_JELZO[t], ma))
+                szovegek[t] = st.text_area(nev, value=alap, height=140, key=f"kitekinto_mezo_{t}")
+
+            if st.button("Mentés", key="kitekinto_mentes"):
+                idopont = most.strftime("%Y-%m-%d %H:%M")
+                mod = st.session_state.pop("kitekinto_mod", "kez")
+                tabla = st.session_state.kitekinto
+                for t, _ in HI.TERULETEK:
+                    tabla = O.beallit(tabla, t, szovegek[t], mod, idopont)
+                st.session_state.kitekinto = tabla
+                uzenet = "Az összegzés elmentve."
+                if tarolo().mukodik:
+                    try:
+                        tarolo().ir(TAROLT["kitekinto"], T.tabla_szovegge(tabla),
+                                    f"Kitekintő összegzés {idopont}")
+                        st.session_state.setdefault("utoljara_mentve", {})["kitekinto"] = \
+                            T.tabla_szovegge(tabla)
+                        uzenet += " Mentve a tárolóba."
+                    except T.TarolasHiba as e:
+                        uzenet += f" A mentés nem sikerült: {e}"
+                st.success(uzenet)
+                st.rerun()
+
+    lab = [f"{hirgyujtes['forrasok']} hírcsatornából"]
+    if hirgyujtes["hibak"]:
+        lab.append("most nem válaszolt: " + ", ".join(h.split(":")[0] for h in hirgyujtes["hibak"]))
+    st.markdown('<p class="ear-megj">Hírek ' + ", ".join(lab) + '. A lista félóránként frissül. '
+                'A hírek a forrásaik tulajdonai, itt csak a címük és a hivatkozásuk szerepel.</p>',
+                unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------ lehetőségek

@@ -1,6 +1,6 @@
-# Magyar energiaárak (v14, 2026-09-24)
+# Magyar energiaárak (v16, 2026-10-05)
 
-Webes árpult a magyar másnapi villamos energia (15 perces) és a CEEGEX földgáz árairól, a hazai villamosenergia-termelés forrásonkénti bontásával.
+Webes árpult a magyar másnapi villamos energia (15 perces) és a CEEGEX földgáz árairól, a hazai villamosenergia-termelés forrásonkénti bontásával, és az árakra ható hírek kitekintőjével.
 Az azonnali árakat megnyitáskor és a Frissítés gombra kéri le a forrásokból; adatbázis és háttérfolyamat nincs.
 A határidős (heti, havi, negyedéves, féléves, szezonális és éves) jegyzéseket kézzel kell megadni,
 mert azokat a tőzsdék csak előfizetéssel adják ki gépi lekérésre.

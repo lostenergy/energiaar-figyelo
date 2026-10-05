@@ -1,0 +1,92 @@
+/* Energiaár-figyelő weboldal, CPIFM arculat. Mindkét oldal ezt használja. */
+
+:root {
+  --tinta: #0F2A44;
+  --tinta-mely: #0A1E31;
+  --sargarez: #C8923D;
+  --sargarez-mely: #B07F33;
+  --arany-hatter: #F0E2C2;
+  --acel: #6B7785;
+  --kod: #F4F6F8;
+  --vonal: #D6DDE3;
+  --betu: Calibri, Carlito, "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: var(--betu); font-size: 17px; line-height: 1.55;
+}
+
+/* ---- sötét sáv és hullám ---- */
+.sav { background: linear-gradient(160deg, var(--tinta) 0%, var(--tinta-mely) 100%); color: #FFFFFF; }
+.sav-tartalom { max-width: 1180px; margin: 0 auto; padding: 2.2rem 1.25rem 2.6rem 1.25rem; }
+.hullam { display: block; width: 100%; height: 34px; margin-top: -1px; }
+.cimke {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--sargarez); margin: 0 0 0.5rem 0;
+}
+h1 { font-size: 2.1rem; font-weight: 700; margin: 0 0 0.5rem 0; letter-spacing: -0.01em; }
+.alcim { font-size: 1.05rem; color: #C9D4DE; margin: 0; max-width: 62ch; }
+
+/* ---- törzs ---- */
+main { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3rem 1.25rem; }
+h2 { font-size: 1.3rem; font-weight: 700; margin: 0; }
+p { margin: 0 0 0.9rem 0; max-width: 64ch; }
+ul { list-style: none; margin: 0; padding: 0; }
+li { position: relative; padding-left: 1.4rem; margin-bottom: 0.55rem; }
+li::before {
+  content: "\25A0"; position: absolute; left: 0; top: -0.05rem;
+  color: var(--sargarez); font-size: 0.72rem; line-height: 1.9;
+}
+.ketto { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2rem; align-items: start; }
+@media (max-width: 820px) { .ketto { grid-template-columns: 1fr; gap: 1.2rem; } }
+.doboz { background: var(--kod); border-left: 3px solid var(--sargarez); padding: 1rem 1.15rem; }
+.doboz p { margin: 0 0 0.5rem 0; font-size: 0.95rem; }
+.doboz p:last-child { margin-bottom: 0; }
+
+/* ---- gombok ---- */
+.gomb {
+  display: inline-block; background: var(--sargarez); color: #FFFFFF; text-decoration: none;
+  font-weight: 700; font-size: 0.95rem; padding: 0.6rem 1.3rem; border-radius: 3px;
+  border: 1px solid var(--sargarez);
+}
+.gomb:hover { background: var(--sargarez-mely); border-color: var(--sargarez-mely); }
+.gomb-halvany {
+  background: transparent; color: #FFFFFF; border-color: rgba(255, 255, 255, 0.45);
+  font-size: 0.88rem; padding: 0.4rem 0.9rem;
+}
+.gomb-halvany:hover { background: rgba(255, 255, 255, 0.1); border-color: #FFFFFF; }
+
+/* ---- belépés kártyája a nyitólapon ---- */
+.belepes {
+  background: var(--arany-hatter); padding: 1.5rem 1.6rem; margin-top: 2.4rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+}
+.belepes h2 { margin-bottom: 0.3rem; }
+.belepes p { margin: 0; font-size: 0.95rem; max-width: 56ch; }
+
+/* ---- adatok oldal: fejléc és teljes magasságú keret ---- */
+.adat-oldal { display: flex; flex-direction: column; height: 100vh; }
+.adat-fej {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; padding: 0.75rem 1.25rem;
+}
+.adat-fej .cim { font-size: 1.05rem; font-weight: 700; color: #FFFFFF; margin: 0; }
+.adat-fej .cimke { margin: 0 0 0.1rem 0; font-size: 0.7rem; }
+.keret { flex: 1 1 auto; min-height: 0; background: #FFFFFF; }
+.keret iframe { width: 100%; height: 100%; border: none; display: block; }
+.hianyzik { padding: 3rem 1.5rem; text-align: center; color: var(--acel); background: var(--kod); height: 100%; }
+.hianyzik strong { color: var(--tinta); }
+.hianyzik code {
+  display: inline-block; background: #FFFFFF; border: 1px solid var(--vonal);
+  padding: 0.15rem 0.45rem; font-size: 0.9rem;
+}
+
+/* ---- lábjegyzet ---- */
+footer { border-top: 1px solid var(--vonal); margin-top: 2.5rem; }
+.lab { max-width: 1180px; margin: 0 auto; padding: 1.4rem 1.25rem 2.5rem 1.25rem;
+       color: var(--acel); font-size: 0.85rem; }
+.lab p { max-width: none; }
+.lab strong { color: var(--tinta); }
+.megjegyzes { color: var(--acel); font-size: 0.88rem; }

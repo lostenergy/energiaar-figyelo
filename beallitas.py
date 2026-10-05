@@ -1,7 +1,7 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
-VERZIO = "v14"
-VERZIO_NAPJA = "2026-09-24"
+VERZIO = "v16"
+VERZIO_NAPJA = "2026-10-05"
 
 IDOZONA = "Europe/Budapest"
 
@@ -57,6 +57,16 @@ SZIN = {
     "emelkedes": "#B85042",   # drágulás, kockázat
     "csokkenes": "#5A8F6B",   # olcsóbbodás, előny
 }
+
+# Kitekintő: hírek és összegzés
+# Meddig őrzi a lekért híreket, mielőtt újra lekérné (másodperc)
+HIREK_ELTARTHATOSAG = 30 * 60
+# Ennyi napnál régebbi hír nem kerül be, és területenként ennyi hír látszik
+HIREK_NAP = 10
+HIREK_DARAB = 10
+# Az összegzéshez használt nyelvi modell. Csak akkor kell, ha a beállításokban van kulcs.
+OSSZEGZO_URL = "https://api.anthropic.com/v1/messages"
+OSSZEGZO_MODELL = "claude-haiku-4-5-20251001"
 
 # A Lehetőségek fül alapértelmezései (a felületen átírhatók)
 ALAP_EVES_ARAM_MWH = 1000
