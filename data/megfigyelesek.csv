@@ -367,10 +367,11 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-09 19:58,holnapi_ar_hianyzik,2026-10-10|19,,19:58-kor még nem volt elérhető a holnapi áramár
 2026-10-09 19:58,gaz_da,2026-10-09,71.43,"Új CEEGEX másnapi gázár (2026-10-09): 71,43 EUR/MWh"
 2026-10-09 19:58,mutato,aram_30nap|2026-10-09,188.77,"Villamos zsinórár, 30 napos átlag"
-2026-10-09 19:58,mutato,deli_sav|2026-10-09,-0.5402,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-10-09 19:58,mutato,negativ_arany|2026-10-09,0.0146,Nulla vagy negatív árú negyedórák aránya
 2026-10-09 19:58,mutato,fwd_jovo_ev|2026-10-09,153.5,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-10-09 19:58,mutato,gorbe_irany|2026-10-09,-0.2189,Második év ára az elsőhöz képest
 2026-10-09 19:58,mutato,gaz_30nap|2026-10-09,70.62,"Gáz másnapi ár, havi átlag"
 2026-10-09 19:58,mutato,nap_arany|2026-10-09,13.97,A napenergia részaránya a fogyasztásból
 2026-10-09 19:58,mutato,aram_gaz_arany|2026-10-09,2.67,Áram és gáz árának aránya
+2026-10-09 20:30,holnapi_ar_hianyzik,2026-10-10|20,,20:30-kor még nem volt elérhető a holnapi áramár
+2026-10-09 20:30,mutato,deli_sav|2026-10-09,-0.5402,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-10-09 20:30,mutato,negativ_arany|2026-10-09,0.0146,Nulla vagy negatív árú negyedórák aránya
+2026-10-09 20:30,mutato,gorbe_irany|2026-10-09,-0.2189,Második év ára az elsőhöz képest
