@@ -420,5 +420,5 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-14 07:28,mutato,gaz_30nap|2026-10-14,71.04,"Gáz másnapi ár, havi átlag"
 2026-10-14 07:28,mutato,nap_arany|2026-10-14,14.94,A napenergia részaránya a fogyasztásból
 2026-10-14 07:28,mutato,aram_gaz_arany|2026-10-14,2.71,Áram és gáz árának aránya
-2026-10-14 09:40,mutato,deli_sav|2026-10-14,-0.4952,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-10-14 09:40,mutato,gorbe_irany|2026-10-14,-0.2189,Második év ára az elsőhöz képest
+2026-10-14 10:43,mutato,deli_sav|2026-10-14,-0.4952,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-10-14 10:43,mutato,gorbe_irany|2026-10-14,-0.2189,Második év ára az elsőhöz képest
