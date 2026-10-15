@@ -425,11 +425,11 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-14 18:54,mutato,gorbe_irany|2026-10-14,-0.2189,Második év ára az elsőhöz képest
 2026-10-14 18:54,mutato,gaz_30nap|2026-10-14,71.37,"Gáz másnapi ár, havi átlag"
 2026-10-14 18:54,mutato,aram_gaz_arany|2026-10-14,2.7,Áram és gáz árának aránya
-2026-10-15 09:28,mutato,aram_30nap|2026-10-15,194.54,"Villamos zsinórár, 30 napos átlag"
+2026-10-15 09:27,mutato,aram_30nap|2026-10-15,194.54,"Villamos zsinórár, 30 napos átlag"
+2026-10-15 09:27,mutato,fwd_jovo_ev|2026-10-15,153.5,Jövő évi zsinór termék ára (legfrissebb jegyzés)
+2026-10-15 09:27,mutato,gaz_30nap|2026-10-15,71.37,"Gáz másnapi ár, havi átlag"
+2026-10-15 09:27,mutato,nap_arany|2026-10-15,18.86,A napenergia részaránya a fogyasztásból
+2026-10-15 09:27,mutato,aram_gaz_arany|2026-10-15,2.73,Áram és gáz árának aránya
 2026-10-15 09:28,mutato,deli_sav|2026-10-15,-0.4838,A legolcsóbb négyórás sáv eltérése a napi átlagtól
 2026-10-15 09:28,mutato,negativ_arany|2026-10-15,0.0122,Nulla vagy negatív árú negyedórák aránya
-2026-10-15 09:28,mutato,fwd_jovo_ev|2026-10-15,153.5,Jövő évi zsinór termék ára (legfrissebb jegyzés)
 2026-10-15 09:28,mutato,gorbe_irany|2026-10-15,-0.2189,Második év ára az elsőhöz képest
-2026-10-15 09:28,mutato,gaz_30nap|2026-10-15,71.37,"Gáz másnapi ár, havi átlag"
-2026-10-15 09:28,mutato,nap_arany|2026-10-15,18.86,A napenergia részaránya a fogyasztásból
-2026-10-15 09:28,mutato,aram_gaz_arany|2026-10-15,2.73,Áram és gáz árának aránya
