@@ -170,6 +170,23 @@ Két úton tehető közzé:
 Mindkét esetben igaz, hogy a beágyazott alkalmazás a saját címén elérhető marad; erről a
 HONLAP.md végén van szó.
 
+## Honnan jönnek az árak
+
+A másnapi villamos árakat **két forrásból** kéri le a program, és a frissebb győz:
+
+- **HUPX Labs**, a magyar áramtőzsde nyilvános adatfelülete. Ez az elsődleges: innen jön a mai és
+  a holnapi nap negyedórás ára, a megkereskedett mennyiséggel együtt, rögtön a közzététel után.
+  Belépés és előfizetés nem kell hozzá.
+- **Energy-Charts**, a korábbi forrás. Ez adja a hosszú, négyszáz napos előzményt, és akkor is
+  helytáll, ha a tőzsde felülete nem válaszol.
+
+Így ha bármelyik kiesik, a másik viszi tovább. A nyitósáv csak akkor ír „nem elérhető” feliratot,
+ha mindkettő elérhetetlen.
+
+A HUPX felületéről érkezik az **erőművi kiesések** listája is, ami a Termelés fülön jelenik meg:
+melyik egység áll, tervezetten vagy üzemzavar miatt, mennyi teljesítménnyel és meddig. A nem
+tervezett kiesés az, ami a másnapi árat hirtelen megemelheti, ezért az kerül a lista elejére.
+
 ## Kitekintő fül
 
 Ez a fül azt mutatja meg, mi mozgatja éppen az árakat, három körben: Magyarország, Európa és a

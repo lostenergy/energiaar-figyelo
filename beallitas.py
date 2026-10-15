@@ -1,7 +1,7 @@
 """Az Energiaár-figyelő beállításai. Itt érdemes módosítani, ha más csúcsidő vagy időtáv kell."""
 
-VERZIO = "v18"
-VERZIO_NAPJA = "2026-10-05"
+VERZIO = "v19"
+VERZIO_NAPJA = "2026-10-15"
 
 IDOZONA = "Europe/Budapest"
 
@@ -15,6 +15,12 @@ TERMELES_ELOZMENY_NAP = 120
 # Beépített (telepített) erőművi teljesítmény forrásonként, évenként; ugyanabból a forrásból
 KAPACITAS_URL = "https://api.energy-charts.info/installed_power"
 KAPACITAS_ELTARTHATOSAG = 24 * 3600
+
+# HUPX Labs: a magyar áramtőzsde nyilvános adatai (másnapi árak és erőművi kiesések).
+# Belépés és kulcs nélkül olvasható; az előzménye körülbelül két hónap.
+HUPX_ARAK_URL = "https://labs.hupx.hu/data/v1/dam_aggregated_trading_data_15min"
+HUPX_KIESESEK_URL = "https://labs.hupx.hu/data/v1/iip"
+KIESESEK_ELTARTHATOSAG = 30 * 60
 
 # Csúcsidőszak: 8 órától 20 óráig (a 20 óra már nem része)
 CSUCS_KEZDET = 8

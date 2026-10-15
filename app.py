@@ -23,6 +23,7 @@ import elemzes as E
 import forrasok as F
 import hataridos as H
 import hirek as HI
+import hupx as HU
 import lehetosegek as L
 import megfigyeles as M
 import osszegzes as O
@@ -379,6 +380,17 @@ def termeles_elozmeny(vegnap: date, napok: int) -> pd.DataFrame:
     return F.leker_termeles(vegnap - timedelta(days=napok), vegnap)
 
 
+@st.cache_data(ttl=B.FRISS_ELTARTHATOSAG, show_spinner=False)
+def hupx_friss(ma: date) -> pd.DataFrame:
+    """A tőzsde saját másnapi árai: a mai és a holnapi nap, negyedórás bontásban."""
+    return HU.leker_arak(ma - timedelta(days=B.FRISS_NAP), ma + timedelta(days=2))
+
+
+@st.cache_data(ttl=B.KIESESEK_ELTARTHATOSAG, show_spinner=False)
+def kiesesek_adat(ma: date) -> pd.DataFrame:
+    return HU.leker_kiesesek(ma)
+
+
 @st.cache_data(ttl=B.HIREK_ELTARTHATOSAG, show_spinner=False)
 def hirek_adat() -> dict:
     return HI.osszegyujt(napok=B.HIREK_NAP, darab=B.HIREK_DARAB)
@@ -411,16 +423,29 @@ def betolt(ma: date, mentett: dict) -> dict:
                     and len(tarolt_napi) >= B.ELOZMENY_NAP * 0.6)
 
     villamos = tarolt_negyedora
+    ki["forgalom"] = {}
+
+    # A tőzsde saját adata a legfrissebb és a leghitelesebb, ezért ez írja felül a többit.
+    try:
+        hupx_arak = hupx_friss(ma)
+        if not hupx_arak.empty:
+            ki["forgalom"] = HU.napi_forgalom(hupx_arak)
+    except Exception as e:
+        hupx_arak = F.ures(HU.ARAK_OSZLOPOK)
+        ki["hibak"].append(f"HUPX: {e}")
+
     try:
         villamos = F.egyesit([villamos, villamos_friss(ma)], "unix")
-        if not van_elozmeny:
-            try:
-                hosszu = villamos_elozmeny(ma - timedelta(days=B.FRISS_NAP + 1), B.ELOZMENY_NAP)
-                villamos = F.egyesit([hosszu, villamos], "unix")
-            except Exception as e:
-                ki["hibak"].append(f"Villamos előzmény: {e}")
     except Exception as e:
         ki["hibak"].append(f"Villamos árak: {e}")
+    if not van_elozmeny:
+        try:
+            hosszu = villamos_elozmeny(ma - timedelta(days=B.FRISS_NAP + 1), B.ELOZMENY_NAP)
+            villamos = F.egyesit([hosszu, villamos], "unix")
+        except Exception as e:
+            ki["hibak"].append(f"Villamos előzmény: {e}")
+    if not hupx_arak.empty:
+        villamos = F.egyesit([villamos, hupx_arak[F.VILLAMOS_OSZLOPOK]], "unix")
     ki["villamos"] = villamos if not villamos.empty else F.ures(F.VILLAMOS_OSZLOPOK)
 
     szamolt_napi = S.napi_osszesites(ki["villamos"])
@@ -523,6 +548,8 @@ def ment_tarolóba(adat: dict, mentett: dict) -> list[str]:
 
 def mindent_ujra() -> None:
     villamos_friss.clear()
+    hupx_friss.clear()
+    kiesesek_adat.clear()
     termeles_friss.clear()
     kapacitas_adat.clear()
     hirek_adat.clear()
@@ -648,7 +675,8 @@ zs_ma, zs_holnap = napi_ertek(ma, "zsinor"), napi_ertek(holnap, "zsinor")
 gaz_elozo = S.gaz_kulcsszamok(gaz)["da_elozo"]
 
 # Ha a villamos forrás most nem válaszol, azt írjuk ki, és nem azt, hogy még nincs ár
-villamos_kiesett = any(h.startswith(("Villamos árak", "Energy-Charts")) for h in hibak)
+villamos_kiesett = len([h for h in hibak if h.startswith(("Villamos árak", "HUPX",
+                                                            "Energy-Charts"))]) >= 2
 hianyzo = "nem elérhető" if villamos_kiesett else "nincs még"
 forras_megj = "a forrás most nem válaszol" if villamos_kiesett else ""
 
@@ -784,6 +812,11 @@ with lap_villamos:
                        if holnapi_negyedorak else pd.Timestamp(f"{holnap.isoformat()} 00:00")])
             fig.update_yaxes(title=dict(text="EUR/MWh", font=dict(size=11, color=SZ["acel"])))
             mutat(fig)
+
+        mai_forgalom = adat.get("forgalom", {}).get(ma.isoformat())
+        if mai_forgalom:
+            st.markdown(f'<p class="ear-megj">Mai tőzsdei forgalom a HUPX másnapi piacán: '
+                        f'{hu(mai_forgalom, 0)} MWh.</p>', unsafe_allow_html=True)
 
         if not van_holnap:
             utolso = villamos["ido"].max() if not villamos.empty else ""
@@ -1198,6 +1231,39 @@ with lap_termeles:
             fig.update_yaxes(title=dict(text="MW", font=dict(size=11, color=SZ["acel"])), rangemode="tozero")
             mutat(fig)
 
+        try:
+            kiesesek = kiesesek_adat(ma)
+        except Exception as e:
+            kiesesek = HU.ures_kiesesek()
+            st.markdown(f'<p class="ear-megj">A kiesések most nem érhetők el: {escape(str(e))}</p>',
+                        unsafe_allow_html=True)
+        if not kiesesek.empty:
+            osszeg = HU.kieses_osszegzes(kiesesek)
+            alcim("Mi áll most a hazai erőműparkból?",
+                  "Tervezett karbantartás és üzemzavar a tőzsde közzététele szerint. "
+                  "A nem tervezett kiesés az, ami a másnapi árat hirtelen megemelheti.")
+            kartyak([
+                ("Nem tervezett", hu(osszeg["nem_tervezett_mw"], 0), "MW, üzemzavar vagy korlátozás"),
+                ("Tervezett", hu(osszeg["tervezett_mw"], 0), "MW, bejelentett karbantartás"),
+                ("Együtt", hu(osszeg["osszes_mw"], 0), f'MW, {osszeg["darab"]} bejelentés'),
+            ])
+            sorok = []
+            for k in kiesesek.head(12).itertuples():
+                szin = SZ["emelkedes"] if k.tipus == "nem tervezett" else SZ["acel"]
+                arany = (f'{hu(k.kieso_mw / k.beepitett_mw * 100, 0)} százaléka'
+                         if k.beepitett_mw else "")
+                sorok.append(
+                    f'<tr><td><b>{escape(str(k.egyseg))}</b><br>'
+                    f'<span class="halvany">{escape(str(k.tulajdonos)[:40])}</span></td>'
+                    f'<td><span style="color:{szin}">{escape(str(k.tipus))}</span><br>'
+                    f'<span class="halvany">{escape(str(k.uzemanyag))}</span></td>'
+                    f'<td style="text-align:right"><b>{hu(k.kieso_mw, 0)} MW</b><br>'
+                    f'<span class="halvany">{arany}</span></td>'
+                    f'<td>{escape(str(k.kezdet))}<br>'
+                    f'<span class="halvany">{escape(str(k.veg))}</span></td></tr>')
+            st.markdown(tabla_html(["Egység", "Jelleg", "Kieső teljesítmény", "Mettől meddig"],
+                                   sorok), unsafe_allow_html=True)
+
         kihasznalt = TE.kihasznaltsag(kapacitas, termeles_ora, ma.isoformat())
         novekedes = TE.kapacitas_novekedes(kapacitas)
         if not kihasznalt.empty or not novekedes.empty:
@@ -1330,7 +1396,8 @@ with lap_termeles:
                                   for o in ("megujulo_arany", "nap_arany")})
                 st.dataframe(tabla, hide_index=True, width="stretch", height=320,
                              column_config=beallitas)
-        st.markdown('<p class="ear-megj">Forrás: Energy-Charts (Fraunhofer ISE, CC BY 4.0), az adatok eredete '
+        st.markdown('<p class="ear-megj">Kiesések: HUPX Labs. Termelés: '
+                    'Energy-Charts (Fraunhofer ISE, CC BY 4.0), az adatok eredete '
                     'az ENTSO-E átláthatósági platform. Az értékek MW teljesítményt, a napi táblázat MWh '
                     'energiát mutat.</p>', unsafe_allow_html=True)
 
@@ -1807,6 +1874,7 @@ with lap_elozmeny:
                        file_name=f"energiaarak_{ma.isoformat()}.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                        width="content")
-    st.markdown('<p class="ear-megj">Források: Energy-Charts (Fraunhofer ISE, CC BY 4.0) és CEEGEX. '
+    st.markdown('<p class="ear-megj">Források: HUPX Labs (másnapi árak és erőművi kiesések), '
+                'Energy-Charts (Fraunhofer ISE, CC BY 4.0) és CEEGEX. '
                 'A CEEGEX árai csak belső számításra használhatók, továbbadni vagy közzétenni nem szabad.<br>'
                 f'Alkalmazás: {B.VERZIO}, {B.VERZIO_NAPJA}' + (', nézegethető változat.' if NEZO else '.') + '</p>', unsafe_allow_html=True)
