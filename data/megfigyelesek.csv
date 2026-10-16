@@ -438,11 +438,11 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-15 19:56,mutato,gorbe_irany|2026-10-15,-0.2189,Második év ára az elsőhöz képest
 2026-10-16 08:06,mutato,aram_30nap|2026-10-16,197.91,"Villamos zsinórár, 30 napos átlag"
 2026-10-16 08:06,mutato,fwd_jovo_ev|2026-10-16,153.5,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-10-16 22:09,holnapi_ar,2026-10-17,268.23,"Megérkezett a 2026-10-17 napi áramár: zsinór 268,23 EUR/MWh"
-2026-10-16 22:09,gaz_da,2026-10-16,84.9,"Új CEEGEX másnapi gázár (2026-10-16): 84,90 EUR/MWh"
+2026-10-16 22:08,holnapi_ar,2026-10-17,268.23,"Megérkezett a 2026-10-17 napi áramár: zsinór 268,23 EUR/MWh"
+2026-10-16 22:08,gaz_da,2026-10-16,84.9,"Új CEEGEX másnapi gázár (2026-10-16): 84,90 EUR/MWh"
+2026-10-16 22:08,mutato,gaz_30nap|2026-10-16,72.18,"Gáz másnapi ár, havi átlag"
+2026-10-16 22:08,mutato,nap_arany|2026-10-16,10.28,A napenergia részaránya a fogyasztásból
+2026-10-16 22:08,mutato,aram_gaz_arany|2026-10-16,2.74,Áram és gáz árának aránya
 2026-10-16 22:09,mutato,deli_sav|2026-10-16,-0.4754,A legolcsóbb négyórás sáv eltérése a napi átlagtól
 2026-10-16 22:09,mutato,negativ_arany|2026-10-16,0.0118,Nulla vagy negatív árú negyedórák aránya
 2026-10-16 22:09,mutato,gorbe_irany|2026-10-16,-0.2189,Második év ára az elsőhöz képest
-2026-10-16 22:09,mutato,gaz_30nap|2026-10-16,72.18,"Gáz másnapi ár, havi átlag"
-2026-10-16 22:09,mutato,nap_arany|2026-10-16,10.28,A napenergia részaránya a fogyasztásból
-2026-10-16 22:09,mutato,aram_gaz_arany|2026-10-16,2.74,Áram és gáz árának aránya
