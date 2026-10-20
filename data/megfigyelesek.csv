@@ -480,6 +480,6 @@ idopont,tema,kulcs,ertek,szoveg
 2026-10-20 14:46,mutato,gaz_30nap|2026-10-20,74.86,"Gáz másnapi ár, havi átlag"
 2026-10-20 14:46,mutato,nap_arany|2026-10-20,18.79,A napenergia részaránya a fogyasztásból
 2026-10-20 14:46,mutato,aram_gaz_arany|2026-10-20,2.86,Áram és gáz árának aránya
-2026-10-20 14:53,mutato,deli_sav|2026-10-20,-0.4594,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-10-20 14:53,mutato,negativ_arany|2026-10-20,0.0107,Nulla vagy negatív árú negyedórák aránya
-2026-10-20 14:53,mutato,gorbe_irany|2026-10-20,-0.2189,Második év ára az elsőhöz képest
+2026-10-20 14:55,mutato,deli_sav|2026-10-20,-0.4594,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-10-20 14:55,mutato,negativ_arany|2026-10-20,0.0107,Nulla vagy negatív árú negyedórák aránya
+2026-10-20 14:55,mutato,gorbe_irany|2026-10-20,-0.2189,Második év ára az elsőhöz képest
