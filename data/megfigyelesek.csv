@@ -599,13 +599,14 @@ idopont,tema,kulcs,ertek,szoveg
 2026-11-07 01:43,mutato,aram_30nap|2026-11-07,269.69,"Villamos zsinórár, 30 napos átlag"
 2026-11-07 01:43,mutato,gaz_30nap|2026-11-07,88.35,"Gáz másnapi ár, havi átlag"
 2026-11-07 01:43,mutato,aram_gaz_arany|2026-11-07,3.05,Áram és gáz árának aránya
-2026-11-07 08:10,mutato,nap_arany|2026-11-07,15.11,A napenergia részaránya a fogyasztásból
 2026-11-07 08:13,jegyzes,2026-11-02,9.0,9 határidős jegyzés érkezett a 2026-11-02 napra
 2026-11-07 08:13,jegyzes,2026-11-03,9.0,9 határidős jegyzés érkezett a 2026-11-03 napra
 2026-11-07 08:13,jegyzes,2026-11-04,9.0,9 határidős jegyzés érkezett a 2026-11-04 napra
 2026-11-07 08:13,jegyzes,2026-11-05,9.0,9 határidős jegyzés érkezett a 2026-11-05 napra
 2026-11-07 08:13,jegyzes,2026-11-06,9.0,9 határidős jegyzés érkezett a 2026-11-06 napra
 2026-11-07 08:13,mutato,fwd_jovo_ev|2026-11-07,171.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-11-07 08:14,mutato,deli_sav|2026-11-07,-0.3429,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-11-07 08:14,mutato,negativ_arany|2026-11-07,0.0074,Nulla vagy negatív árú negyedórák aránya
-2026-11-07 08:14,mutato,gorbe_irany|2026-11-07,-0.2705,Második év ára az elsőhöz képest
+2026-11-07 19:25,holnapi_ar,2026-11-08,251.68,"Megérkezett a 2026-11-08 napi áramár: zsinór 251,68 EUR/MWh"
+2026-11-07 19:25,mutato,deli_sav|2026-11-07,-0.3429,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-11-07 19:25,mutato,negativ_arany|2026-11-07,0.0074,Nulla vagy negatív árú negyedórák aránya
+2026-11-07 19:25,mutato,gorbe_irany|2026-11-07,-0.2705,Második év ára az elsőhöz képest
+2026-11-07 19:25,mutato,nap_arany|2026-11-07,15.18,A napenergia részaránya a fogyasztásból
