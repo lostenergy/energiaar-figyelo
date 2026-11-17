@@ -679,13 +679,13 @@ idopont,tema,kulcs,ertek,szoveg
 2026-11-16 20:56,mutato,deli_sav|2026-11-16,-0.2573,A legolcsóbb négyórás sáv eltérése a napi átlagtól
 2026-11-16 20:56,mutato,negativ_arany|2026-11-16,0.0071,Nulla vagy negatív árú negyedórák aránya
 2026-11-16 20:56,mutato,gorbe_irany|2026-11-16,-0.2705,Második év ára az elsőhöz képest
-2026-11-17 18:48,holnapi_ar,2026-11-18,195.54,"Megérkezett a 2026-11-18 napi áramár: zsinór 195,54 EUR/MWh"
-2026-11-17 18:48,gaz_da,2026-11-17,79.02,"Új CEEGEX másnapi gázár (2026-11-17): 79,02 EUR/MWh"
-2026-11-17 18:48,mutato,aram_30nap|2026-11-17,279.96,"Villamos zsinórár, 30 napos átlag"
-2026-11-17 18:48,mutato,deli_sav|2026-11-17,-0.2422,A legolcsóbb négyórás sáv eltérése a napi átlagtól
-2026-11-17 18:48,mutato,negativ_arany|2026-11-17,0.0071,Nulla vagy negatív árú negyedórák aránya
-2026-11-17 18:48,mutato,fwd_jovo_ev|2026-11-17,171.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
-2026-11-17 18:48,mutato,gorbe_irany|2026-11-17,-0.2705,Második év ára az elsőhöz képest
-2026-11-17 18:48,mutato,gaz_30nap|2026-11-17,87.29,"Gáz másnapi ár, havi átlag"
-2026-11-17 18:48,mutato,nap_arany|2026-11-17,1.75,A napenergia részaránya a fogyasztásból
-2026-11-17 18:48,mutato,aram_gaz_arany|2026-11-17,3.21,Áram és gáz árának aránya
+2026-11-17 18:49,holnapi_ar,2026-11-18,195.54,"Megérkezett a 2026-11-18 napi áramár: zsinór 195,54 EUR/MWh"
+2026-11-17 18:49,gaz_da,2026-11-17,79.02,"Új CEEGEX másnapi gázár (2026-11-17): 79,02 EUR/MWh"
+2026-11-17 18:49,mutato,aram_30nap|2026-11-17,279.96,"Villamos zsinórár, 30 napos átlag"
+2026-11-17 18:49,mutato,deli_sav|2026-11-17,-0.2422,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-11-17 18:49,mutato,negativ_arany|2026-11-17,0.0071,Nulla vagy negatív árú negyedórák aránya
+2026-11-17 18:49,mutato,fwd_jovo_ev|2026-11-17,171.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
+2026-11-17 18:49,mutato,gorbe_irany|2026-11-17,-0.2705,Második év ára az elsőhöz képest
+2026-11-17 18:49,mutato,gaz_30nap|2026-11-17,87.29,"Gáz másnapi ár, havi átlag"
+2026-11-17 18:49,mutato,nap_arany|2026-11-17,1.75,A napenergia részaránya a fogyasztásból
+2026-11-17 18:49,mutato,aram_gaz_arany|2026-11-17,3.21,Áram és gáz árának aránya
