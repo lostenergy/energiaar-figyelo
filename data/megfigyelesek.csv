@@ -709,3 +709,12 @@ idopont,tema,kulcs,ertek,szoveg
 2026-11-20 21:33,mutato,gaz_30nap|2026-11-20,85.23,"Gáz másnapi ár, havi átlag"
 2026-11-20 21:33,mutato,nap_arany|2026-11-20,2.88,A napenergia részaránya a fogyasztásból
 2026-11-20 21:33,mutato,aram_gaz_arany|2026-11-20,3.2,Áram és gáz árának aránya
+2026-11-25 05:49,gaz_da,2026-11-24,86.11,"Új CEEGEX másnapi gázár (2026-11-24): 86,11 EUR/MWh"
+2026-11-25 05:49,mutato,aram_30nap|2026-11-25,269.29,"Villamos zsinórár, 30 napos átlag"
+2026-11-25 05:49,mutato,deli_sav|2026-11-25,-0.1915,A legolcsóbb négyórás sáv eltérése a napi átlagtól
+2026-11-25 05:49,mutato,negativ_arany|2026-11-25,0.0043,Nulla vagy negatív árú negyedórák aránya
+2026-11-25 05:49,mutato,fwd_jovo_ev|2026-11-25,171.0,Jövő évi zsinór termék ára (legfrissebb jegyzés)
+2026-11-25 05:49,mutato,gorbe_irany|2026-11-25,-0.2705,Második év ára az elsőhöz képest
+2026-11-25 05:49,mutato,gaz_30nap|2026-11-25,83.43,"Gáz másnapi ár, havi átlag"
+2026-11-25 05:49,mutato,nap_arany|2026-11-25,11.0,A napenergia részaránya a fogyasztásból
+2026-11-25 05:49,mutato,aram_gaz_arany|2026-11-25,3.23,Áram és gáz árának aránya
